@@ -22,7 +22,7 @@ const morgan = require('morgan');
 const config = require('./config');
 const mountRoutes = require('./routes');
 const { errorHandler } = require('./middleware');
-const { AppError } = require('./utils');
+const { ApiError } = require('./utils');
 
 // ── Create Express app ──────────────────────────────────────────────
 const app = express();
@@ -54,7 +54,7 @@ mountRoutes(app);
 // Any request that doesn't match a registered route lands here.
 // Express 5 requires named wildcard params (path-to-regexp v8 syntax).
 app.use((req, res, next) => {
-  next(new AppError(`Route not found: ${req.method} ${req.originalUrl}`, 404));
+  next(new ApiError(404, `Route not found: ${req.method} ${req.originalUrl}`));
 });
 
 // ── Global error handler (must be last) ─────────────────────────────

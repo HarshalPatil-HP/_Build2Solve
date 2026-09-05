@@ -6,7 +6,7 @@
  *
  * Responsibilities:
  *  1. Log the error (full stack in dev, concise in prod).
- *  2. Distinguish operational errors (AppError, validation) from
+ *  2. Distinguish operational errors (ApiError, validation) from
  *     programming bugs so we never leak internal details to the client.
  *  3. Return a consistent JSON error envelope.
  */
@@ -17,23 +17,26 @@ const config = require('../config');
 const errorHandler = (err, req, res, next) => {
   // Default to 500 if no status code was set
   err.statusCode = err.statusCode || 500;
+  err.message = err.message || 'Something went wrong';
 
   // ---- Development: full detail for debugging ----
   if (config.isDev()) {
     console.error('[ERROR]', err);
     return res.status(err.statusCode).json({
       success: false,
-      error: err.message,
+      message: err.message,
+      errors: err.errors || [],
       stack: err.stack,
     });
   }
 
   // ---- Production: hide internal details ----
   if (err.isOperational) {
-    // Trusted error we intentionally threw (AppError)
+    // Trusted error we intentionally threw (ApiError)
     return res.status(err.statusCode).json({
       success: false,
-      error: err.message,
+      message: err.message,
+      errors: err.errors || [],
     });
   }
 
@@ -41,7 +44,7 @@ const errorHandler = (err, req, res, next) => {
   console.error('[UNHANDLED ERROR]', err);
   return res.status(500).json({
     success: false,
-    error: 'An unexpected error occurred. Please try again later.',
+    message: 'An unexpected error occurred. Please try again later.',
   });
 };
 
