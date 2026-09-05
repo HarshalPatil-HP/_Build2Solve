@@ -1,0 +1,24 @@
+{
+  "name": "lm-compliance-checker-api",
+  "version": "1.0.0",
+  "description": "Legal Metrology (Packaged Commodities) Rules 2011 — Compliance Checker API",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["legal-metrology", "compliance", "packaged-commodities", "india"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "morgan": "^1.12.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
