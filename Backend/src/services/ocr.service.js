@@ -1,7 +1,8 @@
 const Tesseract = require('tesseract.js');
 
 const runOcr = async (imageBuffer) => {
-  const { data } = await Tesseract.recognize(imageBuffer, 'eng');
+  // English and Hindi are both legally valid declaration languages.
+  const { data } = await Tesseract.recognize(imageBuffer, 'eng+hin');
 
   const blocks = [];
   const source = data.words?.length ? data.words : data.lines || [];

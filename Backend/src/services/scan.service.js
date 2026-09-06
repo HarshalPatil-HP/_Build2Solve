@@ -33,7 +33,8 @@ const resolveMode = (role) => {
 };
 
 const createScan = async (req) => {
-  if (!req.file) throw new ApiError(400, 'Image file is required (field: image)', 'VALIDATION_ERROR');
+  const files = req.scanFiles || [];
+  if (!files.length) throw new ApiError(400, 'At least one image is required (field: images)', 'VALIDATION_ERROR');
 
   const {
     productName,
@@ -64,30 +65,41 @@ const createScan = async (req) => {
     if (companyId && product.companyId && product.companyId.toString() !== companyId) {
       throw new ApiError(409, 'Product is linked to a different company', 'PRODUCT_COMPANY_MISMATCH');
     }
-  } else {
-    product = await Product.create({ name: productName, category, companyId });
   }
 
-  const cloudResult = await uploadImage(req.file.buffer);
-  const { rawText, blocks } = await runOcr(req.file.buffer);
-  const extracted = await extractFields(rawText, blocks, product.category);
+  const effectiveCategory = product?.category || category;
+  const ocrResults = [];
+  // OCR is intentionally sequential: four simultaneous Tesseract workers can
+  // exhaust a small hosted instance and cause a scan request to crash.
+  for (const [imageIndex, file] of files.entries()) {
+    const dimensions = getImageDimensions(file.buffer);
+    if (!dimensions?.height) throw new ApiError(400, `Could not read dimensions for image ${imageIndex + 1}`, 'INVALID_IMAGE');
+    const { rawText, blocks } = await runOcr(file.buffer);
+    ocrResults.push({
+      rawText,
+      imageIndex,
+      blocks: blocks.map((block) => ({ ...block, imageIndex, imageHeightPx: dimensions.height })),
+    });
+  }
+  const cloudResults = await Promise.all(files.map((file) => uploadImage(file.buffer)));
+  const rawText = ocrResults.map((result, index) => `--- Image ${index + 1} ---\n${result.rawText}`).join('\n\n');
+  const extracted = await extractFields(ocrResults, effectiveCategory);
 
-  const dimensions = getImageDimensions(req.file.buffer);
-  if (!dimensions?.height) throw new ApiError(400, 'Could not read uploaded image dimensions', 'INVALID_IMAGE');
-  const imageHeightPx = dimensions.height;
+  if (!product) product = await Product.create({ name: productName, category, companyId });
 
   const analysis = await runRuleEngine({
-    category: product.category,
+    category: effectiveCategory,
     extracted,
     matchedBlocks: extracted.matchedBlocks,
     rawText,
     packageWidthCm: packageWidthCm ? parseFloat(packageWidthCm) : null,
     packageHeightCm: packageHeightCm ? parseFloat(packageHeightCm) : null,
-    imageHeightPx,
+    imageHeightPx: ocrResults[0].blocks[0]?.imageHeightPx || 1,
     isMolded: isMolded === 'true' || isMolded === true,
     isTobacco: isTobacco === 'true' || isTobacco === true,
     isRestaurantFastFood: isRestaurantFastFood === 'true' || isRestaurantFastFood === true,
     isImported: isImported === 'true' || isImported === true,
+    categoryMismatchHint: effectiveCategory !== 'food' && /\b(ingredients|nutrition(?:al)?\s*(?:information|facts)?|fssai)\b/i.test(rawText),
   });
 
   const scan = await Scan.create({
@@ -95,17 +107,18 @@ const createScan = async (req) => {
     scannerRole: req.user.role,
     companyId,
     productId: product._id,
-    imageUrls: [cloudResult.secure_url],
+    imageUrls: cloudResults.map((result) => result.secure_url),
     ocrRawText: rawText,
     extractedFields: {
       manufacturer: extracted.fields.manufacturer,
       mrp: extracted.fields.mrp,
       netQuantity: extracted.fields.netQuantity,
       mfgDate: extracted.fields.mfgDate,
-      genericName: extracted.fields.genericName || productName,
+      genericName: extracted.fields.genericName,
       consumerCare: extracted.fields.consumerCare,
       countryOfOrigin: extracted.fields.countryOfOrigin,
     },
+    supplementaryMetadata: extracted.supplementaryMetadata,
     mode: resolveMode(req.user.role),
     location: parseLocation(location),
     overallStatus: analysis.overallStatus,

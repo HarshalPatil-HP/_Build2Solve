@@ -1,4 +1,5 @@
 const { Rule } = require('../models');
+const LOW_CONFIDENCE_THRESHOLD = 60;
 
 // Current post-2018 PDP area → minimum font height table (Rule 7)
 const FONT_TABLE = [
@@ -40,7 +41,7 @@ const checkFontSize = ({ matchedBlocks, packageWidthCm, packageHeightCm, imageHe
   const minMm = getMinFontMm(pdpArea, isMolded);
 
   const pixelHeight = qtyBlock?.height || 0;
-  const imgH = imageHeightPx || 1;
+  const imgH = qtyBlock?.imageHeightPx || imageHeightPx || 1;
 
   // pixelToMmRatio = packageHeightCm*10 / imageHeightPixels
   const pixelToMmRatio = estimated ? 0.05 : (packageHeightCm * 10) / imgH;
@@ -65,10 +66,16 @@ const checkFontSize = ({ matchedBlocks, packageWidthCm, packageHeightCm, imageHe
 
 const checkPlacement = ({ matchedBlocks, imageHeightPx }) => {
   const mandatory = ['manufacturer', 'mrp', 'netQuantity', 'genericName', 'consumerCare'];
-  const points = mandatory
-    .map((f) => matchedBlocks[f])
-    .filter(Boolean)
-    .map(blockCenter);
+  const byImage = new Map();
+  for (const field of mandatory) {
+    const block = matchedBlocks[field];
+    if (!block) continue;
+    const index = block.imageIndex ?? 0;
+    if (!byImage.has(index)) byImage.set(index, []);
+    byImage.get(index).push({ field, block });
+  }
+  const selected = [...byImage.values()].sort((a, b) => b.length - a.length)[0] || [];
+  const points = selected.map(({ block }) => blockCenter(block));
 
   if (points.length < 2) {
     return {
@@ -85,11 +92,10 @@ const checkPlacement = ({ matchedBlocks, imageHeightPx }) => {
     y: points.reduce((s, p) => s + p.y, 0) / points.length,
   };
 
-  const imgH = imageHeightPx || 1;
+  const imgH = selected[0]?.block.imageHeightPx || imageHeightPx || 1;
   const flagged = [];
 
-  for (const [field, block] of Object.entries(matchedBlocks)) {
-    if (!block || !mandatory.includes(field)) continue;
+  for (const { field, block } of selected) {
     const center = blockCenter(block);
     const distPct = (distance(center, centroid) / imgH) * 100;
     if (distPct > 40) flagged.push({ field, distPct: distPct.toFixed(1) });
@@ -118,8 +124,9 @@ const runRuleEngine = async ({
   isTobacco = false,
   isRestaurantFastFood = false,
   isImported = false,
+  categoryMismatchHint = false,
 }) => {
-  const { fields } = extracted;
+  const { fields, fieldConfidence = {}, conflicts = {}, overallConfidence = 0 } = extracted;
   const exemptionsApplied = [];
   const fieldResults = [];
   const estimatedValues = [];
@@ -187,10 +194,21 @@ const runRuleEngine = async ({
       continue;
     }
 
+    const confidence = fieldConfidence[check.name] || 0;
     let status = fields[check.name] ? 'pass' : 'fail';
     let reason = fields[check.name] ? 'Declaration detected' : 'Mandatory declaration missing';
+    if (conflicts[check.name]) {
+      status = 'needs-review';
+      reason = 'Conflicting values were detected across label images; manual verification required';
+    } else if (fields[check.name] && confidence < LOW_CONFIDENCE_THRESHOLD) {
+      status = 'needs-review';
+      reason = `Declaration detected with low OCR confidence (${confidence.toFixed(1)}%); retake photo or verify manually`;
+    } else if (!fields[check.name] && overallConfidence < LOW_CONFIDENCE_THRESHOLD) {
+      status = 'needs-review';
+      reason = `Declaration was not detected and overall OCR confidence is low (${overallConfidence.toFixed(1)}%); retake photo before concluding it is missing`;
+    }
 
-    if (check.name === 'mrp' && fields.mrpTaxPhraseMissing) {
+    if (check.name === 'mrp' && extracted.mrpTaxPhraseMissing && status === 'pass') {
       status = 'fail';
       reason = 'MRP found but "inclusive of all taxes" phrase missing (Rule 6(e))';
     }
@@ -206,10 +224,7 @@ const runRuleEngine = async ({
   }
 
   // Readability proxy — average OCR confidence of matched blocks
-  const confidences = Object.values(matchedBlocks)
-    .filter(Boolean)
-    .map((b) => b.confidence || 0);
-  const avgConf = confidences.length ? confidences.reduce((a, b) => a + b, 0) / confidences.length : 0;
+  const avgConf = overallConfidence;
   if (rulesByField.has('readability')) fieldResults.push({
     fieldName: 'readability',
     detected: confidences.length > 0,
@@ -279,6 +294,14 @@ const runRuleEngine = async ({
     });
   }
 
+  if (categoryMismatchHint) {
+    fieldResults.push({
+      fieldName: 'categorySelection', detected: true, value: category, status: 'needs-review',
+      ruleReference: null,
+      reason: 'OCR contains food-label terms (ingredients, nutrition, or FSSAI) but the selected category is not food. Confirm category before relying on exemptions.',
+    });
+  }
+
   const hasFail = fieldResults.some((f) => f.status === 'fail');
   const hasReview = fieldResults.some((f) => ['needs-review', 'requires-visual-verification', 'warning'].includes(f.status));
 
@@ -290,4 +313,4 @@ const runRuleEngine = async ({
   };
 };
 
-module.exports = { runRuleEngine, getMinFontMm, checkFontSize, checkPlacement };
+module.exports = { runRuleEngine, getMinFontMm, checkFontSize, checkPlacement, LOW_CONFIDENCE_THRESHOLD };

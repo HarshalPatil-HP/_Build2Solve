@@ -2,8 +2,14 @@ const errorHandler = (err, req, res, next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(400).json({ success: false, message: 'File too large. Max 5MB.', code: 'FILE_TOO_LARGE' });
   }
+  if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+    return res.status(400).json({ success: false, message: 'Upload at most 4 images using the images field.', code: 'INVALID_IMAGE_COUNT' });
+  }
   if (err.message?.includes('Only JPG')) {
     return res.status(400).json({ success: false, message: err.message, code: 'INVALID_FILE_TYPE' });
+  }
+  if (err.message?.includes('between 1 and 4 product-label images')) {
+    return res.status(400).json({ success: false, message: err.message, code: 'INVALID_IMAGE_COUNT' });
   }
   if (err.name === 'ValidationError' || err.name === 'CastError') {
     return res.status(400).json({

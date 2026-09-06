@@ -47,6 +47,10 @@ const scanSchema = new mongoose.Schema({
     consumerCare: { type: String, default: null },
     countryOfOrigin: { type: String, default: null },
   },
+  // Context only: these fields never participate in Legal Metrology failures.
+  supplementaryMetadata: {
+    fssaiLicenseNumbers: { type: [String], default: [] },
+  },
   mode: {
     type: String,
     enum: ['self-check', 'field-inspection', 'public-check'],
