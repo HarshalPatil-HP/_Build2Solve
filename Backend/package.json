@@ -7,6 +7,7 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test:models": "node scripts/testModels.js",
+    "seed:rules": "node scripts/seedRules.js",
     "test": "node scripts/testModels.js"
   },
   "keywords": [
@@ -18,12 +19,20 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.11.0",
     "cors": "^2.8.6",
+    "docx": "^9.7.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "helmet": "^8.3.0",
+    "joi": "^18.2.8",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.5",
-    "morgan": "^1.12.0"
+    "morgan": "^1.12.0",
+    "multer": "^2.3.0",
+    "pdfkit": "^0.20.2",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
