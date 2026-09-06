@@ -1,14 +1,14 @@
 // Barrel export for all Mongoose models.
 
-const User = require('./User');
-const Company = require('./Company');
-const Product = require('./Product');
-const Rule = require('./Rule');
-const Scan = require('./Scan');
-const Violation = require('./Violation');
-const Complaint = require('./Complaint');
-const Case = require('./Case');
-const Report = require('./Report');
+const User = require('./user.model');
+const Company = require('./company.model');
+const Product = require('./product.model');
+const Rule = require('./rule.model');
+const Scan = require('./scan.model');
+const Violation = require('./violation.model');
+const Complaint = require('./complaint.model');
+const Case = require('./case.model');
+const Report = require('./report.model');
 
 module.exports = {
   User,
