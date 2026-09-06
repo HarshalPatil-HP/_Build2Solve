@@ -43,6 +43,21 @@ const signup = async ({ name, email, password, role, companyId }) => {
   return { user: sanitizeUser(user), token };
 };
 
+const createStaff = async ({ name, email, password, role }) => {
+  if (!['inspector', 'admin'].includes(role)) {
+    throw new ApiError(400, 'Only staff roles can be created here', 'VALIDATION_ERROR');
+  }
+  const existing = await User.findOne({ email: email.toLowerCase() });
+  if (existing) throw new ApiError(409, 'Email already registered', 'EMAIL_EXISTS');
+  const user = await User.create({
+    name,
+    email: email.toLowerCase(),
+    passwordHash: await bcrypt.hash(password, SALT_ROUNDS),
+    role,
+  });
+  return sanitizeUser(user);
+};
+
 const login = async ({ email, password }) => {
   const user = await User.findOne({ email: email.toLowerCase() });
   if (!user) throw new ApiError(401, 'Invalid email or password', 'INVALID_CREDENTIALS');
@@ -54,4 +69,4 @@ const login = async ({ email, password }) => {
   return { user: sanitizeUser(user), token };
 };
 
-module.exports = { signup, login };
+module.exports = { signup, login, createStaff };

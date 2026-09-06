@@ -5,6 +5,16 @@ const errorHandler = (err, req, res, next) => {
   if (err.message?.includes('Only JPG')) {
     return res.status(400).json({ success: false, message: err.message, code: 'INVALID_FILE_TYPE' });
   }
+  if (err.name === 'ValidationError' || err.name === 'CastError') {
+    return res.status(400).json({
+      success: false,
+      message: err.name === 'CastError' ? 'Invalid resource identifier' : err.message,
+      code: 'VALIDATION_ERROR',
+    });
+  }
+  if (err.code === 11000) {
+    return res.status(409).json({ success: false, message: 'A record with this value already exists', code: 'DUPLICATE_RECORD' });
+  }
 
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Something went wrong';

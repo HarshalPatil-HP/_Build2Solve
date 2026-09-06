@@ -11,4 +11,9 @@ const login = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, result, 'Login successful'));
 });
 
-module.exports = { signup, login };
+const createStaff = asyncHandler(async (req, res) => {
+  const user = await authService.createStaff(req.body);
+  res.status(201).json(new ApiResponse(201, user, 'Staff account created'));
+});
+
+module.exports = { signup, login, createStaff };

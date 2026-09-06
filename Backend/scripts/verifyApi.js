@@ -1,5 +1,8 @@
 require('dotenv').config();
 const http = require('http');
+const mongoose = require('mongoose');
+const config = require('../src/config');
+const { User } = require('../src/models');
 
 const request = (method, path, body, token) =>
   new Promise((resolve, reject) => {
@@ -28,13 +31,14 @@ const request = (method, path, body, token) =>
   });
 
 const run = async () => {
+  let email;
   const health = await request('GET', '/api/health');
   console.log('Health:', health.status, health.body.success !== false ? 'OK' : health.body);
 
   const noAuth = await request('GET', '/api/scans');
   console.log('Scans without token:', noAuth.status, noAuth.body.message);
 
-  const email = `test.${Date.now()}@example.com`;
+  email = `test.${Date.now()}@example.com`;
   const signup = await request('POST', '/api/auth/signup', {
     name: 'Test User',
     email,
@@ -52,7 +56,10 @@ const run = async () => {
     console.log('Scans with token:', scans.status, scans.body.success ? 'OK' : scans.body.message);
   }
 
-  console.log('\nAPI smoke test complete');
+  await mongoose.connect(config.mongodbUri, { dbName: 'lm_compliance' });
+  await User.deleteOne({ email });
+  await mongoose.disconnect();
+  console.log('\nAPI smoke test complete; temporary test user cleaned up.');
   process.exit(0);
 };
 

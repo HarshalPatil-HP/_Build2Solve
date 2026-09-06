@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.js",
     "test:models": "node scripts/testModels.js",
     "seed:rules": "node scripts/seedRules.js",
-    "test": "node scripts/testModels.js"
+    "test": "node scripts/verifyCore.js && node scripts/testModels.js",
+    "test:core": "node scripts/verifyCore.js"
   },
   "keywords": [
     "legal-metrology",

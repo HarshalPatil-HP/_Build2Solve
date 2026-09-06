@@ -7,6 +7,7 @@ const authenticate = (req, res, next) => {
     return res.status(401).json({
       success: false,
       message: 'Authentication required. Missing or invalid token format.',
+      code: 'AUTHENTICATION_REQUIRED',
     });
   }
 
@@ -24,6 +25,7 @@ const authenticate = (req, res, next) => {
     return res.status(401).json({
       success: false,
       message: 'Invalid or expired token.',
+      code: 'INVALID_TOKEN',
     });
   }
 };

@@ -133,10 +133,22 @@ const runRuleEngine = async ({
     };
   }
 
-  await Rule.find({
+  const now = new Date();
+  const activeRules = await Rule.find({
     isActive: true,
-    $or: [{ category: 'all' }, { category }],
-  }).lean();
+    effectiveFrom: { $lte: now },
+    $and: [
+      { $or: [{ category: 'all' }, { category }] },
+      { $or: [{ effectiveTo: null }, { effectiveTo: { $gte: now } }] },
+    ],
+  }).sort({ effectiveFrom: -1 }).lean();
+
+  // The DB defines which declarations apply. Legal exemptions remain explicit
+  // code because they depend on package facts, not only label text.
+  const rulesByField = new Map();
+  for (const rule of activeRules) {
+    if (!rulesByField.has(rule.fieldName)) rulesByField.set(rule.fieldName, rule);
+  }
 
   const qtyGrams = parseQuantityGrams(fields.netQuantity);
   if (qtyGrams !== null && qtyGrams <= 10 && !isTobacco) {
@@ -149,15 +161,17 @@ const runRuleEngine = async ({
     };
   }
 
-  const checks = [
-    { name: 'manufacturer', rule: 'Rule 6(a)', exempt: category === 'food' },
-    { name: 'genericName', rule: 'Rule 6(b)', exempt: false },
-    { name: 'netQuantity', rule: 'Rule 6(c)', exempt: false },
-    { name: 'mfgDate', rule: 'Rule 6(d)', exempt: category === 'food' || category === 'cosmetics' },
-    { name: 'mrp', rule: 'Rule 6(e)', exempt: false },
-    { name: 'consumerCare', rule: 'Rule 6(2)', exempt: false },
-    { name: 'countryOfOrigin', rule: 'Rule 6(aa)', exempt: !isImported },
-  ];
+  const exemptions = {
+    manufacturer: category === 'food',
+    // Food is exempt from the manufacturer-address declaration, not from
+    // manufacturing-date disclosure. Cosmetics follow their separate regime.
+    mfgDate: category === 'cosmetics',
+    countryOfOrigin: !isImported,
+  };
+  const declarationFields = ['manufacturer', 'genericName', 'netQuantity', 'mfgDate', 'mrp', 'consumerCare', 'countryOfOrigin'];
+  const checks = declarationFields
+    .filter((name) => rulesByField.has(name))
+    .map((name) => ({ name, dbRule: rulesByField.get(name), exempt: Boolean(exemptions[name]) }));
 
   for (const check of checks) {
     if (check.exempt) {
@@ -166,10 +180,10 @@ const runRuleEngine = async ({
         detected: !!fields[check.name],
         value: fields[check.name],
         status: 'exempt',
-        ruleReference: check.rule,
+        ruleReference: check.dbRule.ruleNumber,
         reason: `Exempt for category: ${category}`,
       });
-      exemptionsApplied.push(`${check.rule} — ${check.name}`);
+      exemptionsApplied.push(`${check.dbRule.ruleNumber} — ${check.name}`);
       continue;
     }
 
@@ -186,7 +200,7 @@ const runRuleEngine = async ({
       detected: !!fields[check.name],
       value: fields[check.name],
       status,
-      ruleReference: check.rule,
+      ruleReference: check.dbRule.ruleNumber,
       reason,
     });
   }
@@ -196,7 +210,7 @@ const runRuleEngine = async ({
     .filter(Boolean)
     .map((b) => b.confidence || 0);
   const avgConf = confidences.length ? confidences.reduce((a, b) => a + b, 0) / confidences.length : 0;
-  fieldResults.push({
+  if (rulesByField.has('readability')) fieldResults.push({
     fieldName: 'readability',
     detected: confidences.length > 0,
     value: `${avgConf.toFixed(1)}% avg OCR confidence`,
@@ -206,7 +220,7 @@ const runRuleEngine = async ({
   });
 
   // Misleading words near quantity
-  fieldResults.push({
+  if (rulesByField.has('misleadingWords')) fieldResults.push({
     fieldName: 'misleadingWords',
     detected: fields.misleadingNearQuantity,
     value: null,
@@ -218,15 +232,19 @@ const runRuleEngine = async ({
   });
 
   // Font size
-  const fontResult = checkFontSize({ matchedBlocks, packageWidthCm, packageHeightCm, imageHeightPx, isMolded });
-  fieldResults.push(fontResult);
-  if (fontResult.estimated) estimatedValues.push('fontSize');
+  if (rulesByField.has('fontSize')) {
+    const fontResult = checkFontSize({ matchedBlocks, packageWidthCm, packageHeightCm, imageHeightPx, isMolded });
+    fieldResults.push({ ...fontResult, ruleReference: rulesByField.get('fontSize').ruleNumber });
+    if (fontResult.estimated) estimatedValues.push('fontSize');
+  }
 
   // Placement heuristic
-  fieldResults.push(checkPlacement({ matchedBlocks, imageHeightPx }));
+  if (rulesByField.has('placement')) {
+    fieldResults.push({ ...checkPlacement({ matchedBlocks, imageHeightPx }), ruleReference: rulesByField.get('placement').ruleNumber });
+  }
 
   // GM label — food only
-  if (category === 'food') {
+  if (category === 'food' && rulesByField.has('gmLabel')) {
     const topBlocks = Object.values(matchedBlocks)
       .filter(Boolean)
       .filter((b) => b.y < (imageHeightPx || 9999) * 0.25);
@@ -250,7 +268,7 @@ const runRuleEngine = async ({
     });
   }
 
-  if (category === 'cosmetics') {
+  if (category === 'cosmetics' && rulesByField.has('vegNonVegDot')) {
     fieldResults.push({
       fieldName: 'vegNonVegDot',
       detected: false,
@@ -262,7 +280,7 @@ const runRuleEngine = async ({
   }
 
   const hasFail = fieldResults.some((f) => f.status === 'fail');
-  const hasReview = fieldResults.some((f) => f.status === 'needs-review' || f.status === 'requires-visual-verification');
+  const hasReview = fieldResults.some((f) => ['needs-review', 'requires-visual-verification', 'warning'].includes(f.status));
 
   return {
     overallStatus: hasFail ? 'non-compliant' : hasReview ? 'needs-review' : 'compliant',

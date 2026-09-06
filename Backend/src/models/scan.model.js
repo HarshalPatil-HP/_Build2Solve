@@ -63,12 +63,22 @@ const scanSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
+  // Persist the complete decision trail. A report can then be regenerated later
+  // without rerunning OCR against evidence that may have changed or expired.
+  analysis: {
+    fields: { type: [mongoose.Schema.Types.Mixed], default: [] },
+    estimatedValues: { type: [String], default: [] },
+    exemptionsApplied: { type: [String], default: [] },
+  },
   createdAt: {
     type: Date,
     default: Date.now,
     index: true,
   },
 });
+
+scanSchema.index({ companyId: 1, createdAt: -1 });
+scanSchema.index({ scannedBy: 1, createdAt: -1 });
 
 const Scan = mongoose.model('Scan', scanSchema);
 

@@ -3,6 +3,7 @@ const authorize = (allowedRoles) => (req, res, next) => {
     return res.status(403).json({
       success: false,
       message: 'Forbidden',
+      code: 'FORBIDDEN',
     });
   }
   next();

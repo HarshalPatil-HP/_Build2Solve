@@ -4,12 +4,14 @@ const { uploadRaw } = require('../config/cloudinary');
 const { Report } = require('../models');
 
 const buildContent = (scan, violations) => {
+  const fieldResults = scan.analysis?.fields || [];
   const lines = [
     `Scan ID: ${scan._id}`,
     `Date: ${scan.createdAt?.toISOString?.() || new Date().toISOString()}`,
     `Overall Status: ${scan.overallStatus}`,
     `Product: ${scan.productId?.name || 'N/A'}`,
     `Category: ${scan.productId?.category || 'N/A'}`,
+    `Evidence image: ${scan.imageUrls?.[0] || 'N/A'}`,
     '',
     'Extracted Fields:',
     `  Manufacturer: ${scan.extractedFields?.manufacturer || '—'}`,
@@ -24,6 +26,14 @@ const buildContent = (scan, violations) => {
     ...(violations.length
       ? violations.map((v) => `  • [${v.severity}] ${v.fieldName}: ${v.reason}`)
       : ['  None']),
+    '',
+    'Compliance Checks:',
+    ...(fieldResults.length
+      ? fieldResults.map((field) => `  [${field.status}] ${field.fieldName} (${field.ruleReference || 'N/A'}): ${field.reason}`)
+      : ['  Detailed check history is unavailable for this legacy scan.']),
+    '',
+    `Exemptions applied: ${(scan.analysis?.exemptionsApplied || []).join('; ') || 'None'}`,
+    `Estimated values: ${(scan.analysis?.estimatedValues || []).join(', ') || 'None'}`,
     '',
     'Note: Font-size and placement checks marked as estimates require physical dimensions for precision.',
   ];

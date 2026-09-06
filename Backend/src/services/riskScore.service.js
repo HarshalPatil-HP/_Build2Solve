@@ -5,21 +5,25 @@ const WEIGHTS = { major: 10, minor: 3 };
 const updateRiskScore = async (companyId, violations = []) => {
   if (!companyId) return null;
 
-  const company = await Company.findById(companyId);
-  if (!company) return null;
-
-  company.totalScans += 1;
-
   if (violations.length > 0) {
-    company.totalViolations += violations.length;
     const increment = violations.reduce((sum, v) => sum + (WEIGHTS[v.severity] || WEIGHTS.minor), 0);
-    company.riskScore += increment;
-  } else {
-    company.riskScore = Math.max(0, company.riskScore - 1);
+    return Company.findByIdAndUpdate(
+      companyId,
+      { $inc: { totalScans: 1, totalViolations: violations.length, riskScore: increment } },
+      { new: true }
+    );
   }
 
-  await company.save();
-  return company;
+  // Use an update pipeline so simultaneous clean scans cannot drive the score
+  // below zero through a read-modify-write race.
+  return Company.findByIdAndUpdate(
+    companyId,
+    [{ $set: {
+      totalScans: { $add: [{ $ifNull: ['$totalScans', 0] }, 1] },
+      riskScore: { $max: [0, { $subtract: [{ $ifNull: ['$riskScore', 0] }, 1] }] },
+    } }],
+    { new: true }
+  );
 };
 
 module.exports = { updateRiskScore, WEIGHTS };

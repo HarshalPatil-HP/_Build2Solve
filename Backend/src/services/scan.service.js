@@ -1,6 +1,6 @@
 const { uploadImage } = require('../config/cloudinary');
-const { Scan, Product, Violation, User, Report, Rule } = require('../models');
-const { ApiError } = require('../utils');
+const { Scan, Product, Violation, User, Company, Report, Rule } = require('../models');
+const { ApiError, getImageDimensions } = require('../utils');
 const { getPagination, paginatedResponse } = require('../utils/pagination.util');
 const { runOcr } = require('./ocr.service');
 const { extractFields } = require('./extraction.service');
@@ -14,7 +14,16 @@ const resolveCompanyId = async (reqUser, bodyCompanyId) => {
     if (!user?.companyId) throw new ApiError(403, 'Company account not linked to a company', 'FORBIDDEN');
     return user.companyId.toString();
   }
-  return bodyCompanyId || null;
+  if (reqUser.role === 'user') {
+    if (bodyCompanyId) throw new ApiError(403, 'Public scans cannot be attributed to a company', 'FORBIDDEN');
+    return null;
+  }
+  if (reqUser.role === 'inspector' && bodyCompanyId) {
+    const company = await Company.findById(bodyCompanyId);
+    if (!company) throw new ApiError(404, 'Company not found', 'NOT_FOUND');
+    return company._id.toString();
+  }
+  return null;
 };
 
 const resolveMode = (role) => {
@@ -49,15 +58,23 @@ const createScan = async (req) => {
   if (productId) {
     product = await Product.findById(productId);
     if (!product) throw new ApiError(404, 'Product not found', 'NOT_FOUND');
+    if (req.user.role === 'company' && product.companyId?.toString() !== companyId) {
+      throw new ApiError(403, 'You can only scan products owned by your company', 'FORBIDDEN');
+    }
+    if (companyId && product.companyId && product.companyId.toString() !== companyId) {
+      throw new ApiError(409, 'Product is linked to a different company', 'PRODUCT_COMPANY_MISMATCH');
+    }
   } else {
     product = await Product.create({ name: productName, category, companyId });
   }
 
   const cloudResult = await uploadImage(req.file.buffer);
   const { rawText, blocks } = await runOcr(req.file.buffer);
-  const extracted = await extractFields(rawText, blocks);
+  const extracted = await extractFields(rawText, blocks, product.category);
 
-  const imageHeightPx = Math.max(...blocks.map((b) => b.y + b.height), req.file.buffer ? 800 : 800);
+  const dimensions = getImageDimensions(req.file.buffer);
+  if (!dimensions?.height) throw new ApiError(400, 'Could not read uploaded image dimensions', 'INVALID_IMAGE');
+  const imageHeightPx = dimensions.height;
 
   const analysis = await runRuleEngine({
     category: product.category,
@@ -90,13 +107,19 @@ const createScan = async (req) => {
       countryOfOrigin: extracted.fields.countryOfOrigin,
     },
     mode: resolveMode(req.user.role),
-    location: location ? JSON.parse(typeof location === 'string' ? location : JSON.stringify(location)) : undefined,
+    location: parseLocation(location),
     overallStatus: analysis.overallStatus,
+    analysis: {
+      fields: analysis.fields,
+      estimatedValues: analysis.estimatedValues,
+      exemptionsApplied: analysis.exemptionsApplied,
+    },
   });
 
   const violations = [];
   for (const field of analysis.fields.filter((f) => f.status === 'fail')) {
-    let rule = await Rule.findOne({ fieldName: field.fieldName, isActive: true });
+    let rule = await Rule.findOne({ ruleNumber: field.ruleReference, fieldName: field.fieldName, isActive: true });
+    if (!rule) rule = await Rule.findOne({ fieldName: field.fieldName, isActive: true });
     if (!rule) rule = await Rule.findOne({ isActive: true });
     if (!rule) {
       rule = await Rule.create({
@@ -168,12 +191,24 @@ const getScanReport = async (user, scanId, format = 'pdf') => {
   const existing = await Report.findOne({ scanId: scan._id, format }).sort({ generatedAt: -1 });
   if (existing) return existing;
 
-  const fileUrl =
+  const report =
     format === 'docx'
       ? await reportService.generateDocx(scan, violations, user.userId)
       : await reportService.generatePdf(scan, violations, user.userId);
 
-  return { fileUrl, format, scanId: scan._id };
+  return report;
+};
+
+const parseLocation = (location) => {
+  if (!location) return undefined;
+  if (typeof location === 'object') return location;
+  try {
+    const parsed = JSON.parse(location);
+    if (typeof parsed?.lat !== 'number' || typeof parsed?.lng !== 'number') throw new Error('invalid coordinates');
+    return parsed;
+  } catch {
+    throw new ApiError(400, 'location must be JSON with numeric lat and lng', 'VALIDATION_ERROR');
+  }
 };
 
 module.exports = { createScan, getScans, getScanById, getScanReport };
