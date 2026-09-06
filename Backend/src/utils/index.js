@@ -1,6 +1,5 @@
-/**
- * Barrel export for /utils.
- */
+// Barrel export for utils.
+
 const ApiError = require('./ApiError');
 const ApiResponse = require('./ApiResponse');
 const asyncHandler = require('./asyncHandler');

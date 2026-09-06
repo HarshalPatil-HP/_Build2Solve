@@ -1,7 +1,5 @@
-/**
- * Industry-standard API Response class.
- * Ensures consistent JSON response structure.
- */
+// Consistent JSON response envelope for all successful API responses.
+
 class ApiResponse {
   constructor(statusCode, data, message = 'Success') {
     this.statusCode = statusCode;

@@ -1,18 +1,10 @@
-/**
- * Industry-standard API Error class.
- * Extends native Error with status code, data, success flag, and operational flag.
- */
+// Operational API error with status code — distinguishes expected errors from programming bugs.
+
 class ApiError extends Error {
-  constructor(
-    statusCode,
-    message = 'Something went wrong',
-    errors = [],
-    stack = ''
-  ) {
+  constructor(statusCode, message = 'Something went wrong', errors = [], stack = '') {
     super(message);
     this.statusCode = statusCode;
     this.data = null;
-    this.message = message;
     this.success = false;
     this.errors = errors;
     this.isOperational = true;

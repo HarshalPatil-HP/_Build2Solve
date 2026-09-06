@@ -1,14 +1,7 @@
-/**
- * Async handler wrapper — eliminates try/catch boilerplate in route handlers.
- * Industry standard implementation using Promise.resolve.
- *
- * Usage:
- *   router.get('/foo', asyncHandler(async (req, res, next) => { … }));
- */
-const asyncHandler = (requestHandler) => {
-  return (req, res, next) => {
-    Promise.resolve(requestHandler(req, res, next)).catch((err) => next(err));
-  };
+// Wraps async route handlers so rejected promises are forwarded to Express error handler.
+
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
 };
 
 module.exports = asyncHandler;
