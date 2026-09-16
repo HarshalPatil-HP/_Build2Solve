@@ -155,9 +155,11 @@ const createScan = async (req) => {
     violations.push(v);
   }
 
-  if (companyId) await updateRiskScore(companyId, violations);
+  if (companyId) await updateRiskScore(companyId, analysis.overallStatus, violations);
 
-  product.lastScanStatus = analysis.overallStatus === 'compliant' ? 'compliant' : 'non-compliant';
+  // Product summary must preserve uncertainty; `needs-review` is not a
+  // confirmed violation and must never be collapsed into non-compliant.
+  product.lastScanStatus = scan.overallStatus;
   product.lastScannedAt = new Date();
   product.scanCount += 1;
   await product.save();

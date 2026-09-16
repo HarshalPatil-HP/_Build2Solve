@@ -9,7 +9,8 @@
     "test:models": "node scripts/testModels.js",
     "seed:rules": "node scripts/seedRules.js",
     "test": "node scripts/verifyCore.js && node scripts/testModels.js",
-    "test:core": "node scripts/verifyCore.js"
+    "test:core": "node scripts/verifyCore.js",
+    "repair:product-status": "node scripts/repairProductLastScanStatus.js"
   },
   "keywords": [
     "legal-metrology",

@@ -1,34 +1,46 @@
 const { Rule } = require('../models');
 
 const DEFAULT_PATTERNS = {
-  mrp: /(?:mrp|maximum retail price)[^\d₹]*(?:₹|rs\.?)\s?\d+(?:\.\d{1,2})?/i,
+  // Accept common OCR substitutions (S/5, I/1) but retain the price marker
+  // so ordinary label numbers are not mistaken for an MRP.
+  mrp: /(?:mrp|maximum\s+retail\s+price|(?:rs|r[5s]|₹)\.?)[^\d₹]{0,12}(\d{1,5}(?:[.,]\d{1,2})?)(?:\s*\/-?)?/i,
   netQuantity: /\d+(\.\d+)?\s?(g|kg|ml|l|gm|gms)\b/i,
-  mfgDate: /(?:mfg|manufactured|packed|batch|b\.\s*no\.?)[^\d]*(\d{1,2}[\/\-]?\d{2,4}|[a-z]{3,9}\s?\d{4})/i,
-  consumerCare: /[\w.+-]+@[\w-]+\.[a-z]{2,}|(?:\+?\d[\d\s-]{8,12}\d)/i,
-  genericName: /(?:generic name|commodity|product name|item name|proprietary food)\s*[:\-]?\s*([a-z][a-z0-9 ,&()\-]{2,80})/i,
-  manufacturer: /(?:mfg|manufactured|marketed|packed)\s*(?:by|:)?\s*[a-z0-9 ,.&()\-]{5,160}/i,
+  // Bare digit runs are deliberately excluded: they could be a FSSAI licence
+  // or consumer-care number, not a manufacture/batch date.
+  mfgDate: /(?:(?:mfg|manufactured|packed|batch|b\.\s*no\.?)\s*[:#-]?\s*)?(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}|[a-z]{3,9}\s?\d{4})/i,
+  // A long uninterrupted number is not automatically consumer care: FSSAI,
+  // GST, batch and licence numbers are common on labels. Phone candidates
+  // require a consumer-contact cue and a valid Indian/toll-free shape.
+  consumerCare: /(?:[\w.+-]+@[\w-]+\.[a-z]{2,}|(?:(?:call(?:\s+us)?|contact|phone|tel(?:ephone)?|consumer\s*(?:care|services?))[^0-9]{0,25})((?:1800(?:[\s-]?\d){6})|(?:[6-9]\d{4}[\s-]?\d{5})))/i,
+  genericName: /(?:generic\s+name|commodity|product\s+name|item\s+name|proprietary\s+food)(?:\s*[:\-–—]\s*|\s+)[a-z][a-z0-9 ,&()\-]{2,80}/i,
+  manufacturer: /(?:mfg|manufactured|marketed|packed)\s*(?:by\s*)?[:\-]?\s*([a-z][a-z0-9 ,.&()\-]{3,160})/i,
   countryOfOrigin: /(?:country of origin|made in|product of)\s*[:\s]*([a-z\s]+)/i,
 };
-const MRP_TAX_PHRASE = /(?:inclusive of all taxes|incl\.?\s*of all taxes)/i;
+const MRP_TAX_PHRASE = /(?:inclusive|incl\.?|[i1l]?n?cl)\s*(?:of|0f)?\s*(?:all|a[l1]{2})?\s*(?:tax(?:es)?|[jt]e?s[kx])/i;
 const FSSAI_PATTERN = /(?:fssai(?:\s*(?:lic(?:ence|ense)?(?:\s*no\.?)?)?)?\s*[:#-]?\s*)(\d{14})/i;
 const normalise = (value) => value.toLowerCase().replace(/\s+/g, ' ').trim();
 
-const allMatches = (text, pattern) => {
+const allMatches = (text, pattern, field) => {
   const flags = pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`;
   const regex = new RegExp(pattern.source, flags);
   const matches = [];
   let match;
   while ((match = regex.exec(text)) !== null) {
-    matches.push({ value: match[0].trim(), index: match.index });
+    // The value after “Marketed by:” is the declaration, not the label itself.
+    const value = ['manufacturer', 'consumerCare'].includes(field) && match[1] ? match[1] : match[0];
+    matches.push({ value: value.trim(), index: match.index });
     if (!match[0].length) regex.lastIndex += 1;
   }
   return matches;
 };
 
-const findBlockForMatch = (blocks, matchText) => {
-  const target = normalise(matchText);
-  return blocks.find((block) => normalise(block.text).includes(target))
-    || blocks.find((block) => target.includes(normalise(block.text))) || null;
+const findBlocksForMatch = (blocks, matchText) => {
+  const tokens = normalise(matchText).match(/[a-z0-9]+/g) || [];
+  if (!tokens.length) return [];
+  return blocks.filter((block) => {
+    const word = normalise(block.text);
+    return tokens.some((token) => word.includes(token) || token.includes(word));
+  });
 };
 
 // Merges OCR candidates across label panels. Identical values are deduped;
@@ -53,10 +65,13 @@ const extractFields = async (ocrResults, category = 'all') => {
     const fssai = rawText.match(FSSAI_PATTERN);
     if (fssai?.[1]) fssaiLicenseNumbers.add(fssai[1]);
     for (const [field, pattern] of Object.entries(patterns)) {
-      for (const match of allMatches(rawText, pattern)) {
-        const block = findBlockForMatch(blocks, match.value);
+      for (const match of allMatches(rawText, pattern, field)) {
+        const matchedBlocks = findBlocksForMatch(blocks, match.value);
+        const confidence = matchedBlocks.length
+          ? matchedBlocks.reduce((sum, block) => sum + Number(block.confidence || 0), 0) / matchedBlocks.length
+          : 0;
         candidates[field].push({
-          value: match.value, block, confidence: block?.confidence ?? 0, imageIndex,
+          value: match.value, block: matchedBlocks[0] || null, confidence, imageIndex,
           mrpTaxPhraseMissing: field === 'mrp' && !MRP_TAX_PHRASE.test(rawText.slice(Math.max(0, match.index - 80), match.index + match.value.length + 80)),
         });
       }

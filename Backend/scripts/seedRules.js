@@ -4,13 +4,13 @@ const config = require('../src/config');
 const { Rule } = require('../src/models');
 
 const RULES = [
-  { ruleNumber: 'Rule 6(e)', description: 'MRP inclusive of all taxes', fieldName: 'mrp', category: 'all', validationType: 'regex', validationPattern: '(?:mrp|maximum retail price)[^\\d₹]*(?:₹|rs\\.?)\\s?\\d+(?:\\.\\d{1,2})?' },
+  { ruleNumber: 'Rule 6(e)', description: 'MRP inclusive of all taxes', fieldName: 'mrp', category: 'all', validationType: 'regex', validationPattern: '(?:mrp|maximum\\s+retail\\s+price|(?:rs|r[5s]|₹)\\.?)[^\\d₹]{0,12}(\\d{1,5}(?:[.,]\\d{1,2})?)(?:\\s*\\/-?)?' },
   { ruleNumber: 'Rule 6(c)', description: 'Net quantity declaration', fieldName: 'netQuantity', category: 'all', validationType: 'regex', validationPattern: '\\d+(\\.\\d+)?\\s?(g|kg|ml|l|gm|gms)\\b' },
-  { ruleNumber: 'Rule 6(d)', description: 'Manufacture date', fieldName: 'mfgDate', category: 'all', validationType: 'regex', validationPattern: '(?:mfg|manufactured|packed)[^\\d]*(\\d{1,2}[\\/\\-]?\\d{2,4}|[a-z]{3,9}\\s?\\d{4})' },
-  { ruleNumber: 'Rule 6(2)', description: 'Consumer care contact', fieldName: 'consumerCare', category: 'all', validationType: 'regex', validationPattern: '[\\w.+-]+@[\\w-]+\\.[a-z]{2,}|(?:\\+?\\d[\\d\\s-]{8,12}\\d)' },
-  { ruleNumber: 'Rule 6(a)', description: 'Manufacturer address', fieldName: 'manufacturer', category: 'all', validationType: 'regex', validationPattern: '(?:mfg|manufactured|marketed|packed)\\s*(?:by|:)' },
+  { ruleNumber: 'Rule 6(d)', description: 'Manufacture date or batch date', fieldName: 'mfgDate', category: 'all', validationType: 'regex', validationPattern: '(?:(?:mfg|manufactured|packed|batch|b\\.\\s*no\\.?)\\s*[:#-]?\\s*)?(\\d{1,2}[\\/-]\\d{1,2}[\\/-]\\d{2,4}|[a-z]{3,9}\\s?\\d{4})' },
+  { ruleNumber: 'Rule 6(2)', description: 'Consumer care email or contact-labelled Indian/toll-free phone', fieldName: 'consumerCare', category: 'all', validationType: 'regex', validationPattern: '(?:[\\w.+-]+@[\\w-]+\\.[a-z]{2,}|(?:(?:call(?:\\s+us)?|contact|phone|tel(?:ephone)?|consumer\\s*(?:care|services?))[^0-9]{0,25})((?:1800(?:[\\s-]?\\d){6})|(?:[6-9]\\d{4}[\\s-]?\\d{5})))' },
+  { ruleNumber: 'Rule 6(a)', description: 'Manufacturer or marketer name and address', fieldName: 'manufacturer', category: 'all', validationType: 'regex', validationPattern: '(?:mfg|manufactured|marketed|packed)\\s*(?:by\\s*)?[:\\-]?\\s*([a-z][a-z0-9 ,.&()\\-]{3,160})' },
   { ruleNumber: 'Rule 6(aa)', description: 'Country of origin', fieldName: 'countryOfOrigin', category: 'all', validationType: 'regex', validationPattern: '(?:country of origin|made in|product of)\\s*[:\\s]*([a-z\\s]+)' },
-  { ruleNumber: 'Rule 6(b)', description: 'Generic or common name', fieldName: 'genericName', category: 'all', validationType: 'regex', validationPattern: '(?:generic name|commodity|product name|item name)\\s*[:\\-]?\\s*([a-z][a-z0-9 ,&()\\-]{2,80})' },
+  { ruleNumber: 'Rule 6(b)', description: 'Generic or common name', fieldName: 'genericName', category: 'all', validationType: 'regex', validationPattern: '(?:generic\\s+name|commodity|product\\s+name|item\\s+name|proprietary\\s+food)(?:\\s*[:\\-–—]\\s*|\\s+)[a-z][a-z0-9 ,&()\\-]{2,80}' },
   { ruleNumber: 'Rule 7', description: 'Minimum declaration font size based on PDP area', fieldName: 'fontSize', category: 'all', validationType: 'conditional' },
   { ruleNumber: 'Rule 8', description: 'Mandatory declarations on the Principal Display Panel', fieldName: 'placement', category: 'all', validationType: 'conditional' },
   { ruleNumber: 'Rule 9', description: 'Legibility and prominence of declarations', fieldName: 'readability', category: 'all', validationType: 'conditional' },

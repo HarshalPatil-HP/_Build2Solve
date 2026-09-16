@@ -227,7 +227,10 @@ const runRuleEngine = async ({
   const avgConf = overallConfidence;
   if (rulesByField.has('readability')) fieldResults.push({
     fieldName: 'readability',
-    detected: confidences.length > 0,
+    // `overallConfidence` is calculated by extraction from every OCR text
+    // block across all uploaded panels; the old local `confidences` array was
+    // removed when multi-image merging was introduced.
+    detected: overallConfidence > 0,
     value: `${avgConf.toFixed(1)}% avg OCR confidence`,
     status: avgConf >= 60 ? 'pass' : avgConf >= 40 ? 'needs-review' : 'fail',
     ruleReference: 'Rule 9',

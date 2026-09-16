@@ -24,7 +24,7 @@ const productSchema = new mongoose.Schema({
   },
   lastScanStatus: {
     type: String,
-    enum: ['compliant', 'non-compliant', 'unscanned'],
+    enum: ['compliant', 'non-compliant', 'needs-review', 'unscanned'],
     default: 'unscanned',
   },
   lastScannedAt: {
