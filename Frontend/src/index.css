@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import 'tailwindcss';
+
+/*
+  Design tokens — "Modern Government Digital Service"
+  Use Tailwind classes that map to these names (bg-primary, text-status-compliant, …).
+*/
+@theme {
+  --font-sans: 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
+
+  --color-primary: #0b3d66;
+  --color-primary-light: #14568f;
+  --color-accent-saffron: #ff9933;
+  --color-accent-green: #138808;
+  --color-bg: #f4f6f8;
+  --color-surface: #ffffff;
+  --color-border: #d9dee3;
+
+  --color-status-compliant: #1b8a3d;
+  --color-status-non-compliant: #c62828;
+  --color-status-needs-review: #b8860b;
+  --color-status-exempt: #6b7280;
+  --color-status-pending: #2563eb;
+
+  --color-text-primary: #1a2129;
+  --color-text-secondary: #5b6572;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 18%, white);
+}
