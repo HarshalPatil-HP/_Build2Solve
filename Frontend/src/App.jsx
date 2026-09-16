@@ -1,10 +1,10 @@
-import { AuthPreviewProvider } from './context/AuthPreviewContext';
+import { AuthProvider } from './context/AuthContext';
 import AppRouter from './routes/AppRouter';
 
 export default function App() {
   return (
-    <AuthPreviewProvider>
+    <AuthProvider>
       <AppRouter />
-    </AuthPreviewProvider>
+    </AuthProvider>
   );
 }

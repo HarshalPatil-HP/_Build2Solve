@@ -1,12 +1,14 @@
 import { Navigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { useAuthPreview } from '../context/AuthPreviewContext';
+import { useAuth } from '../context/AuthContext';
+import { getPostLoginPath } from '../utils/roleGuards';
 
 /** Logged-in visitors should not sit on public marketing/auth pages. */
 export default function RedirectIfAuthed({ children }) {
-  const { isAuthenticated, user, homePath } = useAuthPreview();
-  if (isAuthenticated && user?.status === 'active') {
-    return <Navigate to={homePath} replace />;
+  const { isAuthenticated, user } = useAuth();
+  if (isAuthenticated && user) {
+    const targetPath = getPostLoginPath(user);
+    return <Navigate to={targetPath} replace />;
   }
   return children;
 }
