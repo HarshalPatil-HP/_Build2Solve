@@ -7,7 +7,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000,
+  timeout: 180000, // 3 minutes timeout for OCR + Cloudinary multi-image scans
 });
 
 // Request interceptor to attach JWT token
