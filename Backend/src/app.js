@@ -24,7 +24,6 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// 'dev' = concise colored output, 'combined' = Apache-style for production log aggregation
 app.use(morgan(config.isDev() ? 'dev' : 'combined'));
 
 mountRoutes(app);
