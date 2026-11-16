@@ -30,7 +30,7 @@ export default function ScanResultCard({ scanData, role, onFileComplaint, onLock
       case 'compliant':
       case 'pass':
         return {
-          bg: 'bg-green-600 text-white',
+          bg: 'bg-status-compliant text-white',
           icon: <ShieldCheck className="h-6 w-6" />,
           title: 'Statutory Compliance Verified',
           subtitle: 'All Rule 6 mandatory declarations and Rule 7 font standards are met.',
@@ -38,7 +38,7 @@ export default function ScanResultCard({ scanData, role, onFileComplaint, onLock
       case 'non_compliant':
       case 'fail':
         return {
-          bg: 'bg-red-600 text-white',
+          bg: 'bg-status-non-compliant text-white',
           icon: <XCircle className="h-6 w-6" />,
           title: 'Statutory Non-Compliance Flagged',
           subtitle: `${violations.length || 1} violation(s) detected under Legal Metrology Rules, 2011.`,
@@ -46,7 +46,7 @@ export default function ScanResultCard({ scanData, role, onFileComplaint, onLock
       case 'needs_review':
       default:
         return {
-          bg: 'bg-amber-600 text-white',
+          bg: 'bg-status-needs-review text-white',
           icon: <AlertTriangle className="h-6 w-6" />,
           title: 'Manual Visual Review Required',
           subtitle: 'Certain label declarations require visual verification or physical dimensions.',
@@ -59,7 +59,8 @@ export default function ScanResultCard({ scanData, role, onFileComplaint, onLock
   const docxUrl = scanService.getReportUrl(scanId, 'docx');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
+      <h1 className="text-xl font-extrabold text-primary">SahiScan | सही स्कैन</h1>
       {/* Top Banner */}
       <div className={`rounded-2xl p-6 shadow-md flex items-center justify-between gap-4 ${banner.bg}`}>
         <div className="flex items-center gap-4">
@@ -275,6 +276,7 @@ export default function ScanResultCard({ scanData, role, onFileComplaint, onLock
           </div>
         </div>
       </div>
+      <footer className="border-t border-border pt-4 text-center text-sm text-text-secondary">AI findings are advisory and must be verified by an inspector.</footer>
     </div>
   );
 }

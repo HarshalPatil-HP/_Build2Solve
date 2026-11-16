@@ -134,14 +134,14 @@ export default function SlidingAuthPanel() {
                 <Shield className="h-7 w-7 text-accent-saffron" />
               </div>
               <div>
-                <h2 className="text-xl font-bold tracking-tight">Legal Metrology Portal</h2>
-                <p className="text-xs text-white/80">Department of Consumer Affairs</p>
+                <h2 className="text-xl font-bold tracking-tight">SahiScan | सही स्कैन</h2>
+                <p className="text-xs text-white/80">Label compliance assistant</p>
               </div>
             </div>
 
             <div className="pt-6 space-y-3">
               <h3 className="text-2xl font-extrabold leading-snug">
-                {isSignup ? 'Start Pre-Market & Label Audits' : 'Government Enforcement & Verification Engine'}
+                {isSignup ? 'Start Pre-Market & Label Audits' : 'Understand your product labels'}
               </h3>
               <p className="text-sm text-white/80 leading-relaxed">
                 {isSignup

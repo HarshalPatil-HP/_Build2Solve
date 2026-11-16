@@ -1,0 +1,21 @@
+/* Shared theme values, exposed to Tailwind v4 through @theme below. */
+@theme {
+  --font-sans: 'Inter', 'Noto Sans Devanagari', ui-sans-serif, system-ui, sans-serif;
+  --font-devanagari: 'Noto Sans Devanagari', sans-serif;
+  --color-primary: #3730a3;
+  --color-primary-light: #4338ca;
+  --color-accent-saffron: #ffca75;
+  --color-accent-green: #166534;
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-border: #cbd5e1;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-status-compliant: #166534;
+  --color-status-non-compliant: #b91c1c;
+  --color-status-needs-review: #92400e;
+  --color-status-exempt: #475569;
+  --color-status-pending: #1d4ed8;
+  --radius-card: 1rem;
+  --radius-control: 0.5rem;
+}

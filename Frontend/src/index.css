@@ -1,29 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
-
-/*
-  Design Tokens — "Modern Electric Glass Blue" Government Tech Theme
-*/
-@theme {
-  --font-sans: 'Inter', 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
-
-  --color-primary: #1e3a8a;          /* Electric Royal Slate Blue */
-  --color-primary-light: #2563eb;    /* Vibrant Royal Blue */
-  --color-accent-saffron: #f59e0b;   /* Modern Amber/Gold */
-  --color-accent-green: #10b981;     /* Emerald Green */
-  --color-bg: #f8fafc;               /* Modern Slate Surface BG */
-  --color-surface: #ffffff;          /* Pure White Card */
-  --color-border: #e2e8f0;           /* Subtle Slate Border */
-
-  --color-status-compliant: #10b981;     /* Emerald 500 */
-  --color-status-non-compliant: #ef4444; /* Red 500 */
-  --color-status-needs-review: #d97706;  /* Amber 600 */
-  --color-status-exempt: #64748b;        /* Slate 500 */
-  --color-status-pending: #3b82f6;       /* Blue 500 */
-
-  --color-text-primary: #0f172a;     /* Slate 900 */
-  --color-text-secondary: #475569;   /* Slate 600 */
-}
+@import './styles/tokens.css';
 
 html,
 body,
