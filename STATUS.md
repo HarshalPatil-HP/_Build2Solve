@@ -43,8 +43,8 @@ POST and GET contract comparison returned `same contract true legacy true`.
 OCR measurements: `cd Backend; node scripts/measure-ocr.js` exited 0; all
 seven supplied images and the generated blank loaded. See `docs/DUMMY_RUNS.md`.
 
-1. Update the frontend to use the implemented scan contract without fabricated values.
-2. Add repeatable result rendering and upload-error checks for the viva demo.
+1. Diagnose the blank-image browser Network Error recorded below before further implementation.
+2. Repeat the browser 422 check after resolving the failure; adapter and rendering checks are implemented.
 3. Complete WebP dimension support together with its upload-filter change.
 
 ## Approved implementation — step 1
@@ -66,3 +66,28 @@ need review; contract ID, fields, font and 422 mapping`. `npm run build` printed
 `built in 2.13s` (large-chunk warning remains). Browser verification is pending.
 Viva: the adapter translates API data once; missing evidence remains unknown;
 the result component displays server findings rather than calculating legal rules.
+
+## Approved implementation — step 3 verification (stopped on failure)
+
+`node scripts/verifyScanAdapter.mjs` exited 0: `PASS: unknown/missing statuses
+need review; contract ID, fields, font and 422 mapping`.
+`node scripts/verifyScanRendering.mjs` exited 0: `PASS: rendered unknown statuses
+need review; missing font stays unavailable; real measurements render`.
+`npm run lint` exited 0 with warnings (unused variables and React effect warnings).
+`npm run build` exited 0: `2934 modules transformed`, `built in 1.27s`;
+the bundle-size warning remains.
+
+Browser observations: auth showed bilingual SahiScan branding and advisory text;
+registration reached the dashboard. Uploading test1.jpg through the scan button
+opened a saved result with extracted manufacturer, per-field statuses and rule
+references, and `Measurement unavailable`. Navigating away and directly back to
+the result URL loaded the same saved findings. Console warning/error collection
+returned `[]` at the result page.
+
+FAILURE: submitting a generated blank PNG displayed `Scan Request Error Network
+Error`, not the intended unreadable-image message. Console collection returned
+`[]`; HTTP status and root cause are UNTESTED. Implementation stopped as requested.
+One real label scan and one blank attempt were submitted during final verification;
+no more scans were attempted. Separate login and remaining API smoke checks are
+UNTESTED in this step. No cleanup deletion was run. The WebP filter stays stashed;
+ruleEngine and backend sources were not changed by these steps. No branch was merged.
