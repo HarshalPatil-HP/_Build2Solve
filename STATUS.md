@@ -29,6 +29,9 @@ Last updated: 2026-11-16
 
 ## Next steps
 
+OCR measurements: `cd Backend; node scripts/measure-ocr.js` exited 0; all
+seven supplied images and the generated blank loaded. See `docs/DUMMY_RUNS.md`.
+
 1. Add an OCR image-quality/non-label gate before Cloudinary and persistence.
 2. Publish a stable scan response contract while preserving compatibility.
 3. Update the frontend to use the contract without fabricated font values.
