@@ -14,6 +14,11 @@ confidence is the arithmetic mean of returned word confidences.
 | Test1_Kurkure.webp | 35672 | 234 | 70 | 28.56 | yes |
 | blank.png (generated in memory) | 1582 | 0 | 0 | 0 | yes |
 
-The WebP loads in OCR. Upload middleware and dimensions handling are not tested
-by this script. These metrics separate this blank from the supplied images, but
+These metrics separate this blank from the supplied images, but
 do not establish whether a text-containing unrelated image is a label.
+
+## Threshold choice
+
+The selected minimums of 20 OCR words and 60 trimmed characters are below the
+lowest measured supplied image (69 words, 234 characters), while the blank has
+zero of both. They detect insufficient readable text, not label identity.
