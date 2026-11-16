@@ -192,3 +192,153 @@ only within the five-screen scope.
 8. Rule 7 uses an area-based font table.
 9. The frontend has many real handlers but also placeholders, mocks, alerts, and preview auth.
 10. The priority is a small, reproducible end-to-end path before adding more UI.
+
+## Task 2 runtime follow-up (2026-11-15)
+
+### A. Backend boot and database
+
+Command: `cd Backend; npm start`.
+
+Result: the API booted. There was no error class/message to report. Sanitized
+output: `[database] Connected to MongoDB Atlas ([REDACTED])` and
+`[server] development | port 5000 | http://localhost:5000/api/health`.
+MongoDB is **Atlas**, not local MongoDB, and was reachable from the backend
+process. No DB fix is needed. If it had not been available, the smallest
+non-applied fix would be either starting a local `mongod` and setting
+`MONGODB_URI` to its local address, or `docker run -p 27017:27017 mongo` and
+the same local URI. No configuration was changed.
+
+### B. API smoke sequence
+
+The initial sandboxed localhost curl was blocked (`curl: (7) ... Bad access`),
+so these requests were made with approved localhost access.
+
+| Step | Command/result | Short evidence |
+|---|---|---|
+| Health | `curl.exe -s -i http://127.0.0.1:5000/api/health` | `HTTP/1.1 200 OK`; JSON `status: ok`, `message: Server is healthy` |
+| Signup | PowerShell `Invoke-RestMethod POST /api/auth/signup` with a generated test user | `status=201 message=Account created token=[REDACTED]` |
+| Login | PowerShell `Invoke-RestMethod POST /api/auth/login` for that test user | `status=200 message=Login successful token=[REDACTED]` |
+| Scan | `POST /api/scans` multipart with existing `Frontend/src/assets/hero.png` (13,057 bytes), generated test user and auth header | `status=201 message=Scan completed` |
+
+Cloudinary did not fail in this run; a scan completed. The present scan service
+uploads originals to Cloudinary before OCR, so upload is **not currently
+optional**. A local fallback is technically feasible (store the multer memory
+buffer locally and persist a local URL/path), but that is an OPINION and would
+require code, storage/security, and deployment changes; none were applied.
+
+### C. Frontend runtime/UI checks
+
+Command: `cd Frontend; npm run dev -- --host 127.0.0.1`.
+Output: `VITE v8.3.0 ready` and `Local: http://127.0.0.1:3000/`.
+
+I attempted to open `http://127.0.0.1:3000/auth` in the available in-app
+browser. Evidence: `net::ERR_CONNECTION_TIMED_OUT`. A subsequent native-browser
+inspection was stopped because the computer-use layer could not establish the
+browser URL with sufficient confidence. A separate localhost HTTP attempt also
+timed out. Consequently, browser rendering, console errors, and whether buttons
+actually issue API requests are **UNTESTED** for all requested paths:
+`/auth`, `/scan`, `/scan/:id/result`, `/history`, `/admin/dashboard`. The dev
+server process reported ready, but this does not prove page rendering. Static
+inspection remains as recorded in section 4.
+
+### D. Scan ownership enforcement
+
+This was tested at runtime. A generated User A created a scan; generated User B
+then requested User A's `/api/scans/:id` with User B's valid JWT. Command:
+PowerShell `Invoke-RestMethod GET /api/scans/$id` with User B's Authorization
+header. Output: `OWNERSHIP status=403` with short body
+`{"success":false,"message":"Forbidden","code":"FORBIDDEN"}`.
+Therefore normal-user cross-owner scan reads are enforced in this test. Static
+code also compares `scan.scannedBy` with `req.user.userId` in
+`Backend/src/services/scan.service.js`.
+
+### Task 2 final working-tree check
+
+Final command: `git status --short` (recorded after this append) reports exactly
+`M docs/AUDIT.md`. `git diff --name-only` and
+`git ls-files --others --exclude-standard` both report only `docs/AUDIT.md`.
+No other repository file differs from HEAD.
+
+## Task 3: constant scan-result diagnosis (2026-11-16)
+
+### 1. Three-image pipeline evidence
+
+I ran the actual `runOcr` → `extractFields` → `checkFontSize` path against
+the reachable Atlas rule data. Inputs were held in memory: one public product
+label, repository asset `Frontend/src/assets/hero.png` as a random graphic, and
+a public 600×400 all-white PNG. No scan record or local file was created.
+
+Command (abbreviated): `node -e` loaded `ocr.service`, `extraction.service`,
+`ruleEngine.service`, and `getImageDimensions`, then ran all three buffers.
+The full captured output was:
+
+| Image | Raw OCR text | Extracted fields | Font calculation input → output |
+|---|---|---|---|
+| Product label, 460×1024 | `vir Rs 36.00\nwwe 9 G0216PRD\nBatch 16.02.2016\nDate of RS 12016\nBEST BEFORE\np-\nके Nitrogen Flushed, 51076 i\n4 cool and dry place.\nhd ~ Do not buy the pack if found famperes\n\| Halal Certified Lal\namie E\nSt 2005\nA Certified\nack iron \| Company,\n- HACCP\niG PA ? )\nGown) won` | `mrp: "Rs 36.00"`; net quantity, date, consumer care, generic name, manufacturer, country: null | qty block null; dimensions omitted; image height 1024; molded false → `detected:false`, value null, `needs-review`, `estimated:true`, “Net quantity block not detected…” |
+| Random graphic, 343×361 | `<` | all fields null | qty block null; dimensions omitted; image height 361; molded false → same `needs-review` output, value null |
+| Blank PNG, 600×400 | empty string | all fields null | qty block null; dimensions omitted; image height 400; molded false → same `needs-review` output, value null |
+
+OCR block counts were respectively 57, 1, and 0. The label OCR had an actual
+first word box: `{text:"vir", x:144, y:104, width:27, height:10,
+confidence:49}`. The backend’s three font outputs were the same **only in the
+sensible “no net-quantity block” way**; none output `2.8 mm`.
+
+### 2. Exact constant-output point
+
+The constant visible `2.8 mm` is a frontend hardcoded fallback, not empty OCR,
+regex fallback, or the backend font calculator.
+
+- `Frontend/src/components/scan/FontCalibratorBox.jsx:5-7` sets fallback area
+  `330`, required font `4.0`, and `measured = measuredMm || 2.8`.
+- `Frontend/src/components/scan/ScanResultCard.jsx:219-223` passes
+  `analysis.pdpAreaCm2`, `analysis.requiredFontMm`, and
+  `analysis.measuredFontMm` to that component.
+- Backend `runRuleEngine` returns font evidence as an item in
+  `analysis.fields` (`Backend/src/services/ruleEngine.service.js:252-256`),
+  with `value` such as `"2.50mm (min 1.5mm)"`; it does not return any of those
+  three top-level frontend property names.
+- The calculator itself uses actual matched net-quantity box height or zero:
+  `Backend/src/services/ruleEngine.service.js:36-56`. In the three tests its
+  result was null / `needs-review`, as above.
+
+There is a second response-shape mismatch: `ScanResultCard.jsx:26` assigns
+`analysis.fields || {}`, but the backend returns `analysis.fields` as an array.
+Its later accesses such as `fields.netQuantity` cannot find array entries and
+fall back to UI defaults. This explains the repeated warning as well.
+
+### 3. Non-label/unreadable-image rejection
+
+No. Runtime evidence: the random graphic and blank PNG completed OCR and
+extraction rather than being rejected. Static evidence:
+`Backend/src/services/scan.service.js:65-82` only validates image dimensions,
+runs OCR, then pushes results; there is no minimum text/block/confidence or
+label-likelihood gate. In the full API path, such images can proceed onward to
+Cloudinary, product/scan persistence, and `needs-review` rather than receiving
+an invalid/unreadable-image response.
+
+### 4. Reusable OCR bounding boxes
+
+Yes. `Backend/src/services/ocr.service.js:8-30` flattens Tesseract’s `blocks`
+tree to word leaves, and lines 41-57 return `{text,x,y,width,height,confidence}`.
+The 57 word boxes from the product-label run (example above) prove this data is
+available. `extractFields` also retains selected matched boxes in
+`extracted.matchedBlocks`. These coordinates can be reused to draw overlays,
+provided each result is kept with its source-image index/dimensions.
+
+### 5. Recommendations (OPINION; not applied)
+
+Smallest fix: replace the `FontCalibratorBox` truthy defaults with an explicit
+“measurement unavailable” state, and adapt the backend font result into the
+props it expects (or render directly from the `analysis.fields` array). Never
+substitute a measured millimetre value. At the same time, map field-result array
+entries by `fieldName` before `ScanResultCard` reads them.
+
+Hybrid extractor design: first run a vision model on each label image with a
+strict JSON contract per field: `{fieldName, value, confidence, box:{x,y,width,
+height}, imageIndex}` plus `isLabel`/`unreadable` confidence. Reject/retake when
+label/readability confidence is below a selected threshold. Then validate boxes
+against image dimensions, preserve the model/Tesseract evidence, reconcile
+conflicts, and pass normalized fields plus boxes to the existing deterministic
+rule engine. The vision model may propose facts; it must not decide legal
+pass/fail. Keep the current rule engine as the only compliance decision-maker
+and show “needs review” whenever evidence is weak or conflicting.
