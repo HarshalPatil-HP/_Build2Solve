@@ -1,36 +1,28 @@
 import PropTypes from 'prop-types';
-import { CheckCircle2, XCircle, AlertTriangle, HelpCircle, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { normalizeFieldStatus } from '../../services/scanAdapter';
 
 export default function FieldStatusRow({ title, ruleRef, status, extractedValue, reason, isEstimated }) {
   const getStatusBadge = () => {
-    switch (status) {
+    switch (normalizeFieldStatus(status)) {
       case 'pass':
-      case 'compliant':
         return {
           bg: 'bg-green-50 text-status-compliant border-green-200',
           icon: <CheckCircle2 className="h-4 w-4 text-status-compliant" />,
-          label: 'Compliant',
+          label: 'pass',
         };
       case 'fail':
-      case 'non_compliant':
-      case 'violation':
         return {
           bg: 'bg-red-50 text-status-non-compliant border-red-200',
           icon: <XCircle className="h-4 w-4 text-status-non-compliant" />,
-          label: 'Violation',
+          label: 'fail',
         };
-      case 'exempt':
-        return {
-          bg: 'bg-gray-100 text-status-exempt border-gray-300',
-          icon: <ShieldCheck className="h-4 w-4 text-status-exempt" />,
-          label: 'Exempt',
-        };
-      case 'needs_review':
+      case 'needs-review':
       default:
         return {
           bg: 'bg-amber-50 text-status-needs-review border-amber-200',
           icon: <AlertTriangle className="h-4 w-4 text-status-needs-review" />,
-          label: 'Needs Review',
+          label: 'needs-review',
         };
     }
   };

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ImageUploader from '../../components/scan/ImageUploader';
 import ScanLoadingState from '../../components/scan/ScanLoadingState';
+import { adaptScanResponse, scanErrorMessage } from '../../services/scanAdapter';
 import { scanService } from '../../services/scanService';
 import { Shield, Sparkles, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 
@@ -55,11 +56,12 @@ export default function ScanPage() {
 
       const response = await scanService.createScan(formData);
       const scan = response.data || response;
-      const scanId = scan._id || scan.id;
+      const scanId = adaptScanResponse(response).scanId;
+      if (!scanId) throw new Error('The server returned no scan ID. Please try again.');
 
       navigate(`/scan/${scanId}/result`, { state: { scan } });
     } catch (err) {
-      setError(err.message || 'Scan failed. Please check network connection and backend server.');
+      setError(scanErrorMessage(err));
       setLoading(false);
     }
   };
@@ -98,26 +100,17 @@ export default function ScanPage() {
         <div className="rounded-2xl border border-border bg-surface p-6 shadow-xs space-y-6">
           <ImageUploader images={images} onImagesChange={setImages} maxImages={4} />
 
-          {/* Optional Package Metadata Toggle */}
-          <div className="border-t border-border pt-4">
-            <button
-              type="button"
-              onClick={() => setShowMetadata(!showMetadata)}
-              className="flex items-center justify-between w-full text-left text-xs font-bold text-primary hover:underline py-1"
-            >
-              <span>Optional Calibration Details (Improves Rule 7 Font Size Accuracy)</span>
-              {showMetadata ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </button>
-
-            {showMetadata && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 text-xs">
+          <div className="grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
                 <div>
                   <label className="block font-semibold text-text-primary mb-1">
-                    Product Name / Brand
+                    Product Name / Brand (required)
                   </label>
                   <input
                     type="text"
                     name="productName"
+                    required
+                    minLength={2}
+                    maxLength={200}
                     value={metadata.productName}
                     onChange={handleMetadataChange}
                     placeholder="e.g. Fortified Edible Sunflower Oil"
@@ -127,7 +120,7 @@ export default function ScanPage() {
 
                 <div>
                   <label className="block font-semibold text-text-primary mb-1">
-                    Product Category
+                    Product Category (required)
                   </label>
                   <select
                     name="category"
@@ -141,6 +134,21 @@ export default function ScanPage() {
                   </select>
                 </div>
 
+          </div>
+
+          {/* Optional Package Metadata Toggle */}
+          <div className="border-t border-border pt-4">
+            <button
+              type="button"
+              onClick={() => setShowMetadata(!showMetadata)}
+              className="flex items-center justify-between w-full text-left text-xs font-bold text-primary hover:underline py-1"
+            >
+              <span>Optional Calibration Details (Improves Rule 7 Font Size Accuracy)</span>
+              {showMetadata ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+
+            {showMetadata && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 text-xs">
                 <div>
                   <label className="block font-semibold text-text-primary mb-1">
                     Package Display Width (cm)

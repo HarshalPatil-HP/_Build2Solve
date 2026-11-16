@@ -4,6 +4,7 @@ import FieldStatusRow from './FieldStatusRow';
 import FontCalibratorBox from './FontCalibratorBox';
 import VegDotConfirmBox from './VegDotConfirmBox';
 import { ShieldCheck, AlertTriangle, XCircle, FileText, Download, AlertCircle, Lock, Building } from 'lucide-react';
+import { adaptScanResponse, getScanField, getFontMeasurement } from '../../services/scanAdapter';
 import { scanService } from '../../services/scanService';
 
 export default function ScanResultCard({ scanData, role, onFileComplaint, onLockCase }) {
@@ -12,18 +13,17 @@ export default function ScanResultCard({ scanData, role, onFileComplaint, onLock
   if (!scanData) return null;
 
   const {
-    id,
-    _id,
+    scanId,
     overallStatus,
     category,
     images = [],
-    analysis = {},
+    fields = [],
+    estimatedValues = [],
     violations = [],
     supplementaryMetadata = {},
-  } = scanData;
+  } = adaptScanResponse(scanData);
 
-  const scanId = id || _id;
-  const fields = analysis.fields || {};
+  const fontField = getScanField(fields, 'fontSize');
 
   const getStatusBanner = () => {
     switch (overallStatus) {
@@ -32,18 +32,18 @@ export default function ScanResultCard({ scanData, role, onFileComplaint, onLock
         return {
           bg: 'bg-status-compliant text-white',
           icon: <ShieldCheck className="h-6 w-6" />,
-          title: 'Statutory Compliance Verified',
-          subtitle: 'All Rule 6 mandatory declarations and Rule 7 font standards are met.',
+          title: 'Automated checks passed',
+          subtitle: 'Verify these automated findings before relying on them.',
         };
-      case 'non_compliant':
+      case 'non-compliant':
       case 'fail':
         return {
           bg: 'bg-status-non-compliant text-white',
           icon: <XCircle className="h-6 w-6" />,
           title: 'Statutory Non-Compliance Flagged',
-          subtitle: `${violations.length || 1} violation(s) detected under Legal Metrology Rules, 2011.`,
+          subtitle: `${violations.length} recorded violation(s); inspect the field findings below.`,
         };
-      case 'needs_review':
+      case 'needs-review':
       default:
         return {
           bg: 'bg-status-needs-review text-white',
@@ -102,7 +102,7 @@ export default function ScanResultCard({ scanData, role, onFileComplaint, onLock
             <h3 className="text-sm font-bold text-text-primary flex items-center justify-between">
               <span>Evidence Image Docket</span>
               <span className="text-xs font-normal text-text-secondary">
-                {images.length || 1} panel(s)
+                {images.length} panel(s)
               </span>
             </h3>
 
@@ -165,64 +165,21 @@ export default function ScanResultCard({ scanData, role, onFileComplaint, onLock
             </h3>
 
             <div className="space-y-2.5">
-              <FieldStatusRow
-                title="1. Generic Commodity Name"
-                ruleRef="Rule 6(1)(b)"
-                status={fields.genericName?.status || 'pass'}
-                extractedValue={fields.genericName?.value}
-                reason={fields.genericName?.reason}
-                isEstimated={fields.genericName?.isEstimated}
-              />
-
-              <FieldStatusRow
-                title="2. Net Quantity & Package Sizing"
-                ruleRef="Rule 6(1)(c)"
-                status={fields.netQuantity?.status || 'pass'}
-                extractedValue={fields.netQuantity?.value}
-                reason={fields.netQuantity?.reason}
-              />
-
-              <FieldStatusRow
-                title="3. Maximum Retail Price (MRP)"
-                ruleRef="Rule 6(1)(e)"
-                status={fields.mrp?.status || 'pass'}
-                extractedValue={fields.mrp?.value}
-                reason={fields.mrp?.reason}
-              />
-
-              <FieldStatusRow
-                title="4. Month & Year of Packaging / Mfg"
-                ruleRef="Rule 6(1)(d)"
-                status={fields.mfgDate?.status || 'pass'}
-                extractedValue={fields.mfgDate?.value}
-                reason={fields.mfgDate?.reason}
-              />
-
-              <FieldStatusRow
-                title="5. Manufacturer / Packer Details"
-                ruleRef="Rule 6(1)(a)"
-                status={category === 'food' ? 'exempt' : (fields.manufacturer?.status || 'pass')}
-                extractedValue={fields.manufacturer?.value}
-                reason={category === 'food' ? 'Exempt for food commodities under FSSAI 2006 Explanation III.' : fields.manufacturer?.reason}
-              />
-
-              <FieldStatusRow
-                title="6. Consumer Care Contact Details"
-                ruleRef="Rule 6(2)"
-                status={fields.consumerCare?.status || 'pass'}
-                extractedValue={fields.consumerCare?.value}
-                reason={fields.consumerCare?.reason}
-              />
+              {[
+                ...['genericName', 'netQuantity', 'mrp', 'mfgDate', 'manufacturer', 'consumerCare']
+                  .map(name => getScanField(fields, name)),
+                ...fields.filter(field => !['genericName', 'netQuantity', 'mrp', 'mfgDate', 'manufacturer', 'consumerCare'].includes(field.fieldName)),
+              ].map((field, index) => (
+                <FieldStatusRow key={field.fieldName + index} title={field.fieldName}
+                  ruleRef={field.ruleRef} status={field.status}
+                  extractedValue={field.value == null ? null : String(field.value)}
+                  reason={field.reason} />
+              ))}
             </div>
           </div>
 
-          {/* Rule 7 Font Height Calibrator Box */}
-          <FontCalibratorBox
-            pdpAreaCm2={analysis.pdpAreaCm2}
-            reqMinMm={analysis.requiredFontMm}
-            measuredMm={analysis.measuredFontMm}
-            isEstimated={analysis.fontIsEstimated ?? true}
-          />
+          <FontCalibratorBox {...getFontMeasurement(fontField)}
+            isEstimated={estimatedValues.includes('fontSize')} />
 
           {/* Rule 6(8) Veg/Non-Veg Visual Verification Box */}
           {category === 'food' && (
@@ -252,7 +209,7 @@ export default function ScanResultCard({ scanData, role, onFileComplaint, onLock
               </a>
             </div>
 
-            {role === 'user' && overallStatus === 'non_compliant' && onFileComplaint && (
+            {role === 'user' && overallStatus === 'non-compliant' && onFileComplaint && (
               <button
                 type="button"
                 onClick={onFileComplaint}

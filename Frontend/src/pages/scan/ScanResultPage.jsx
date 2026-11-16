@@ -4,33 +4,42 @@ import ScanResultCard from '../../components/scan/ScanResultCard';
 import { scanService } from '../../services/scanService';
 import { caseService } from '../../services/caseService';
 import { useAuth } from '../../context/AuthContext';
+import { adaptScanResponse } from '../../services/scanAdapter';
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 
 export default function ScanResultPage() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, role } = useAuth();
+  const { role } = useAuth();
 
   const [scan, setScan] = useState(location.state?.scan || null);
   const [loading, setLoading] = useState(!location.state?.scan);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!scan && id) {
+    let cancelled = false;
+    const uploaded = location.state?.scan;
+    if (uploaded && adaptScanResponse(uploaded).scanId === id) {
+      setScan(uploaded);
+      setLoading(false);
+      setError(null);
+    } else if (id) {
       setLoading(true);
+      setError(null);
       scanService.getScanById(id)
         .then((res) => {
-          setScan(res.data || res);
+          if (!cancelled) setScan(res.data || res);
         })
         .catch((err) => {
-          setError(err.message || 'Failed to fetch scan details');
+          if (!cancelled) setError(err.message || 'Failed to fetch scan details');
         })
         .finally(() => {
-          setLoading(false);
+          if (!cancelled) setLoading(false);
         });
     }
-  }, [id, scan]);
+    return () => { cancelled = true; };
+  }, [id, location.state]);
 
   const handleFileComplaint = () => {
     navigate(`/complaints/new/${id}`, { state: { scan } });

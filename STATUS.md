@@ -16,10 +16,8 @@ Last updated: 2026-11-16
 
 ## What is broken or incomplete
 
-- The frontend displays a hardcoded 2.8 mm font fallback because its expected
-  response properties do not match the backend response shape.
-- `analysis.fields` is an array in the backend but the result card reads it as
-  an object.
+- The result adapter now reads contract fields as an array and defaults unknown
+  or missing statuses to needs-review. Missing font data shows Measurement unavailable.
 - The readability gate is implemented and verified: fewer than 20 words or
   60 trimmed characters returns 422 before upload or persistence. It does not
   identify unrelated images with text; `isLabel` remains unknown.
@@ -56,3 +54,15 @@ filter is saved in Git stash `Deferred WebP filter: pair with dimension support`
 No backend change is part of the theme commit. The seven test images remain untracked.
 Viva: tokens centralize colors/fonts; the bilingual heading identifies the student
 project; the advisory footer explains that a scan needs human verification.
+
+## Approved implementation — step 2
+
+Scan upload now uses scanId and exposes required product name/category outside
+optional calibration. Results use fields by fieldName, normalize status aliases,
+and load the current ID on refresh/navigation. Shared header/footer and auth copy
+identify SahiScan rather than a government department.
+Proof: `node scripts/verifyScanAdapter.mjs` printed `PASS: unknown/missing statuses
+need review; contract ID, fields, font and 422 mapping`. `npm run build` printed
+`built in 2.13s` (large-chunk warning remains). Browser verification is pending.
+Viva: the adapter translates API data once; missing evidence remains unknown;
+the result component displays server findings rather than calculating legal rules.

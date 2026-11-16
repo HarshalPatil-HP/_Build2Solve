@@ -217,7 +217,7 @@ export default function SlidingAuthPanel() {
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      placeholder="name@organization.gov.in"
+                      placeholder="name@example.com"
                       className="w-full rounded-lg border border-border bg-bg pl-9 pr-3 py-2 text-sm focus:border-primary focus:bg-surface focus:outline-none focus:ring-1 focus:ring-primary"
                       required
                     />
@@ -231,7 +231,7 @@ export default function SlidingAuthPanel() {
                     </label>
                     <button
                       type="button"
-                      onClick={() => alert('For password resets, please contact your System Administrator or Department Helpdesk (1800-11-4000).')}
+                      onClick={() => alert('Password reset is not available yet. Please contact the project administrator.')}
                       className="text-xs font-medium text-primary hover:underline"
                     >
                       Forgot password?
@@ -270,10 +270,10 @@ export default function SlidingAuthPanel() {
               <div className="rounded-lg border border-border bg-bg p-3 text-xs text-text-secondary space-y-1">
                 <p className="font-semibold text-text-primary flex items-center gap-1.5">
                   <Info className="h-3.5 w-3.5 text-primary" />
-                  <span>Official Inspector Accounts:</span>
+                  <span>Inspector accounts:</span>
                 </p>
                 <p>
-                  Inspector credentials are provisioned by Department Administrators. Use your official assigned login details above.
+                  Inspector accounts are created by the project administrator. Use your assigned login details above.
                 </p>
               </div>
             </form>
@@ -366,7 +366,7 @@ export default function SlidingAuthPanel() {
                       required
                     />
                     <p className="text-[10px] text-text-secondary mt-1">
-                      Provided during initial enterprise registration with the Metrology Department.
+                      Provided by the project administrator when your company is registered.
                     </p>
                   </div>
                 )}

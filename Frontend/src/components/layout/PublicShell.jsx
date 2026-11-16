@@ -11,7 +11,7 @@ export default function PublicShell() {
         <Outlet />
       </main>
       <footer className="border-t border-border bg-surface px-4 py-6 text-center text-xs text-text-secondary">
-        Legal Metrology Compliance Portal · Ministry of Consumer Affairs, Food & Public Distribution (SIH26034)
+        SahiScan · AI findings are advisory and must be verified by an inspector.
       </footer>
     </div>
   );

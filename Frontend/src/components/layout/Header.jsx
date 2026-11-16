@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import StatusPill from '../common/StatusPill';
 import { Menu, Bell, LogOut, Shield, User } from 'lucide-react';
 
-const APP_NAME = import.meta.env.VITE_APP_NAME || 'Legal Metrology Compliance Portal';
+const APP_NAME = 'SahiScan | सही स्कैन';
 
 export default function Header({ onMenuClick, showUserChrome }) {
   const { user, logout } = useAuth();
@@ -38,7 +38,7 @@ export default function Header({ onMenuClick, showUserChrome }) {
               {APP_NAME}
             </p>
             <p className="truncate text-xs font-medium text-text-secondary">
-              Department of Consumer Affairs · SIH26034
+              MCA semester project · Label compliance assistant
             </p>
           </div>
         </Link>
