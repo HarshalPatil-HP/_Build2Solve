@@ -31,7 +31,10 @@ Last updated: 2026-11-16
 
 The scan service now gates each image on at least 20 OCR words and 60 trimmed
 characters. This is a readability check, not label detection. API verification
-of this change is UNTESTED pending the contract step.
+returned 422 `UNREADABLE_OR_NON_LABEL_IMAGE` for a blank PNG. Six supplied
+JPG/PNG samples returned 201; WebP returned 400 `INVALID_FILE_TYPE`.
+POST and GET contract comparison returned `same contract true legacy true`.
+`npm run test:core` returned `Offline core verification PASSED`.
 
 OCR measurements: `cd Backend; node scripts/measure-ocr.js` exited 0; all
 seven supplied images and the generated blank loaded. See `docs/DUMMY_RUNS.md`.

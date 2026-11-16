@@ -84,6 +84,7 @@ const createScan = async (req) => {
     ocrResults.push({
       rawText,
       imageIndex,
+      dimensions,
       blocks: blocks.map((block) => ({ ...block, imageIndex, imageHeightPx: dimensions.height })),
     });
   }
@@ -108,12 +109,29 @@ const createScan = async (req) => {
     categoryMismatchHint: effectiveCategory !== 'food' && /\b(ingredients|nutrition(?:al)?\s*(?:information|facts)?|fssai)\b/i.test(rawText),
   });
 
+  // Preserve the evidence required to return the same contract on later reads.
+  const contractImages = cloudResults.map((result, imageIndex) => ({
+    url: result.secure_url, imageIndex, ...ocrResults[imageIndex].dimensions,
+  }));
+  const contractFields = analysis.fields.map((field) => {
+    const block = extracted.matchedBlocks[field.fieldName];
+    return {
+      fieldName: field.fieldName, value: field.value ?? null,
+      status: ['pass', 'fail'].includes(field.status) ? field.status : 'needs-review',
+      confidence: block ? extracted.fieldConfidence[field.fieldName] : null,
+      box: block ? { x: block.x, y: block.y, width: block.width, height: block.height } : null,
+      imageIndex: block?.imageIndex ?? null, ruleRef: field.ruleReference ?? null,
+    };
+  });
+
   const scan = await Scan.create({
     scannedBy: req.user.userId,
     scannerRole: req.user.role,
     companyId,
     productId: product._id,
     imageUrls: cloudResults.map((result) => result.secure_url),
+    contractImages,
+    contractFields,
     ocrRawText: rawText,
     extractedFields: {
       manufacturer: extracted.fields.manufacturer,
@@ -170,8 +188,21 @@ const createScan = async (req) => {
   product.scanCount += 1;
   await product.save();
 
-  return { scan, analysis, violations, product };
+  return { ...toContract(scan), scan, analysis, violations, product };
 };
+
+const toContract = (scan) => ({
+  scanId: scan._id.toString(), isLabel: null,
+  // Historical scans predate the gate, so readability cannot be asserted.
+  unreadable: scan.contractImages ? false : null,
+  overallStatus: scan.overallStatus,
+  images: scan.contractImages || scan.imageUrls.map((url, imageIndex) => ({ url, imageIndex, width: null, height: null })),
+  fields: scan.contractFields || scan.analysis.fields.map((field) => ({
+    fieldName: field.fieldName, value: field.value ?? null,
+    status: ['pass', 'fail'].includes(field.status) ? field.status : 'needs-review',
+    confidence: null, box: null, imageIndex: null, ruleRef: field.ruleReference ?? null,
+  })),
+});
 
 const buildScanFilter = (user) => {
   if (user.role === 'admin') return {};
@@ -202,7 +233,7 @@ const getScanById = async (user, scanId) => {
   }
 
   const violations = await Violation.find({ scanId: scan._id });
-  return { scan, violations };
+  return { ...toContract(scan), scan, violations };
 };
 
 const getScanReport = async (user, scanId, format = 'pdf') => {

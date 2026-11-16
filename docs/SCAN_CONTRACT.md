@@ -41,6 +41,10 @@ envelope (`{ statusCode, data, message, success }`). `data` should contain:
 `status` must use the exact hyphenated values shown above.
 `isLabel` is null (unknown): OCR readability cannot determine whether an image
 is a product label. Non-label detection is deferred to the vision-model step.
+For scans created before the gate, `unreadable` is null and unavailable image
+dimensions, field confidence and boxes are null. Legacy rule statuses other than
+pass or fail map to needs-review in the contract; the original status is kept
+in `scan.analysis.fields`.
 
 ## Current-to-contract mapping
 

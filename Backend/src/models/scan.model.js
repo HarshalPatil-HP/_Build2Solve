@@ -34,6 +34,8 @@ const scanSchema = new mongoose.Schema({
       type: String,
     },
   ],
+  contractImages: { type: [mongoose.Schema.Types.Mixed], default: undefined },
+  contractFields: { type: [mongoose.Schema.Types.Mixed], default: undefined },
   ocrRawText: {
     type: String,
     default: '',
