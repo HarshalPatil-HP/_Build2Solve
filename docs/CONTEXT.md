@@ -1,0 +1,3 @@
+# SahiScan project context
+
+SahiScan is a Legal Metrology label-compliance checker (Express/Mongoose backend, React/Vite frontend), registered as the student's MCA first-year semester project. Teacher rule: AI use is allowed only if the student can explain every file in a viva. Deadline is about 5 Dec 2026, so keep scope small. Decisions so far: keep the backend; the frontend will be replaced later by 5 screens (Auth, Scan, Result, History, Admin) built on the scan contract; a vision-model extractor (Gemini) is planned later but it only extracts fields and boxes, and the existing deterministic rule engine alone decides compliance. Confirmed bugs: the frontend hardcodes 2.8 mm and misreads analysis.fields (array vs object); blank and non-label images are accepted.
