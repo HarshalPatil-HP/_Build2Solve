@@ -27,6 +27,7 @@ envelope (`{ statusCode, data, message, success }`). `data` should contain:
       "fieldName": "mrp",
       "value": "Rs 36.00",
       "status": "pass | fail | needs-review",
+      "ruleStatus": "pass | fail | needs-review | exempt | warning | requires-visual-verification",
       "confidence": 62.5,
       "box": { "x": 144, "y": 104, "width": 27, "height": 10 },
       "imageIndex": 0,
@@ -44,7 +45,11 @@ is a product label. Non-label detection is deferred to the vision-model step.
 For scans created before the gate, `unreadable` is null and unavailable image
 dimensions, field confidence and boxes are null. Legacy rule statuses other than
 pass or fail map to needs-review in the contract; the original status is kept
-in `scan.analysis.fields`.
+in `scan.analysis.fields` and `fields[].ruleStatus`. For older records,
+ruleStatus is recovered from saved engine evidence, or null if unavailable.
+The frontend displays exempt as Exempt with its reason; warning and
+requires-visual-verification remain needs-review. Unknown or absent ruleStatus
+must never display pass. The three-valued status is unchanged.
 
 ## Current-to-contract mapping
 

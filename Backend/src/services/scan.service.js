@@ -116,7 +116,7 @@ const createScan = async (req) => {
   const contractFields = analysis.fields.map((field) => {
     const block = extracted.matchedBlocks[field.fieldName];
     return {
-      fieldName: field.fieldName, value: field.value ?? null,
+      fieldName: field.fieldName, value: field.value ?? null, ruleStatus: field.status,
       status: ['pass', 'fail'].includes(field.status) ? field.status : 'needs-review',
       confidence: block ? extracted.fieldConfidence[field.fieldName] : null,
       box: block ? { x: block.x, y: block.y, width: block.width, height: block.height } : null,
@@ -197,10 +197,14 @@ const toContract = (scan) => ({
   unreadable: scan.contractImages ? false : null,
   overallStatus: scan.overallStatus,
   images: scan.contractImages || scan.imageUrls.map((url, imageIndex) => ({ url, imageIndex, width: null, height: null })),
-  fields: scan.contractFields || scan.analysis.fields.map((field) => ({
+  fields: (scan.contractFields || scan.analysis.fields.map((field) => ({
     fieldName: field.fieldName, value: field.value ?? null,
     status: ['pass', 'fail'].includes(field.status) ? field.status : 'needs-review',
     confidence: null, box: null, imageIndex: null, ruleRef: field.ruleReference ?? null,
+  }))).map((field) => ({
+    ...field,
+    // Recover original engine evidence for contracts saved before ruleStatus.
+    ruleStatus: field.ruleStatus ?? scan.analysis.fields.find((row) => row.fieldName === field.fieldName)?.status ?? null,
   })),
 });
 
