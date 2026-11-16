@@ -29,6 +29,10 @@ Last updated: 2026-11-16
 
 ## Next steps
 
+The scan service now gates each image on at least 20 OCR words and 60 trimmed
+characters. This is a readability check, not label detection. API verification
+of this change is UNTESTED pending the contract step.
+
 OCR measurements: `cd Backend; node scripts/measure-ocr.js` exited 0; all
 seven supplied images and the generated blank loaded. See `docs/DUMMY_RUNS.md`.
 

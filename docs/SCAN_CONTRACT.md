@@ -11,7 +11,7 @@ envelope (`{ statusCode, data, message, success }`). `data` should contain:
 ```json
 {
   "scanId": "MongoDB ObjectId string",
-  "isLabel": true,
+  "isLabel": null,
   "unreadable": false,
   "overallStatus": "compliant | non-compliant | needs-review",
   "images": [
@@ -39,14 +39,16 @@ envelope (`{ statusCode, data, message, success }`). `data` should contain:
 `url` may be `null` while an upload has not produced a public URL. `box` is
 `null` when there is no reliable field location. `imageIndex` is zero-based.
 `status` must use the exact hyphenated values shown above.
+`isLabel` is null (unknown): OCR readability cannot determine whether an image
+is a product label. Non-label detection is deferred to the vision-model step.
 
 ## Current-to-contract mapping
 
 | Contract field | Current backend source | Mapping / compatibility note |
 |---|---|---|
 | `scanId` | `scan._id` | Add `scanId: scan._id.toString()`; retain `_id` and `id`. |
-| `isLabel` | none | New gate decision. `false` when the request is rejected for low OCR evidence. |
-| `unreadable` | none | New gate decision. `true` when OCR text, blocks, or confidence are below the named threshold. |
+| `isLabel` | none | Null: label identity is not determined by OCR. |
+| `unreadable` | none | False for newly accepted scans; low OCR word or character counts are rejected. |
 | `overallStatus` | `scan.overallStatus` | Keep current enum spelling; do not convert to UI-only aliases. |
 | `images[]` | `scan.imageUrls` | Map each URL to `{url, imageIndex, width, height}`. Keep `imageUrls`. |
 | `fields[].fieldName` | `scan.analysis.fields[].fieldName` | Copy unchanged. |
@@ -81,6 +83,9 @@ For a rejected input, return HTTP 422 with an API error code such as
 because no scan should be persisted. The error should identify the image index
 and say that a clear packaged-product label is required; it must not claim a
 legal compliance result.
+
+The gate requires at least 20 OCR words and 60 trimmed characters per image;
+confidence is not used. Text-bearing unrelated images may pass.
 
 ## Design notes
 

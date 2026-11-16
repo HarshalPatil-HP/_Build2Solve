@@ -7,6 +7,8 @@ const { extractFields } = require('./extraction.service');
 const { runRuleEngine } = require('./ruleEngine.service');
 const { updateRiskScore } = require('./riskScore.service');
 const reportService = require('./report.service');
+const MIN_OCR_WORDS = 20;
+const MIN_OCR_CHARS = 60;
 
 const resolveCompanyId = async (reqUser, bodyCompanyId) => {
   if (reqUser.role === 'company') {
@@ -75,6 +77,10 @@ const createScan = async (req) => {
     const dimensions = getImageDimensions(file.buffer);
     if (!dimensions?.height) throw new ApiError(400, `Could not read dimensions for image ${imageIndex + 1}`, 'INVALID_IMAGE');
     const { rawText, blocks } = await runOcr(file.buffer);
+    // This catches blank or unreadable images, not unrelated images containing text.
+    if (blocks.length < MIN_OCR_WORDS || rawText.trim().length < MIN_OCR_CHARS) {
+      throw new ApiError(422, `Image ${imageIndex + 1} (index ${imageIndex}) is unreadable; provide a clear label image`, 'UNREADABLE_OR_NON_LABEL_IMAGE');
+    }
     ocrResults.push({
       rawText,
       imageIndex,
