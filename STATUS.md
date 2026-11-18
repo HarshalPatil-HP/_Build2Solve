@@ -1,6 +1,9 @@
 # SahiScan status
 
 ## Done and verified
+- Phase 2 Task 1: removed unused preview switcher/context after reverse-import checks.
+- Task 1 lint exit 0 (warnings); build built in 1.53s; adapter/render/report scripts PASS.
+- Task 1 browser checks: UNTESTED.
 - Clean reliability task: timing logs record OCR, upload, rulesAndSaveMs and total.
 - Failed stages keep null durations; rulesAndSaveMs includes rules plus saves.
 - PDF/DOCX buttons use authenticated metadata requests and reject undefined IDs.
