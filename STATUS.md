@@ -1,6 +1,12 @@
 # SahiScan status
 
 ## Done and verified
+- Blank browser 422: verified by user-provided screenshot.
+- Backend ruleStatus committed in 9e08e57; ruleEngine unchanged.
+- Adapter and rendering scripts: PASS, including Exempt and unknown rules.
+- Current npm run lint: exit 0 with warnings.
+- Current npm run build: built in 3.49s; bundle-size warning.
+- Current Backend npm run test:core: Offline core verification PASSED.
 - Readability gate implemented; prior `npm run test:core`: PASSED.
 - Prior API verification: blank 422; six JPG/PNG samples 201.
 - `node scripts/verifyScanAdapter.mjs`: PASS.
@@ -12,7 +18,7 @@
 - Browser console collection at result: [].
 
 ## Known broken
-- Blank-image browser submission displayed Network Error.
+- Network Error: not reproduced, monitor; cause unconfirmed.
 - WebP filter is stashed; API WebP support remains incomplete.
 - Five-screen reduction is pending.
 - Gemini phase has not started.
@@ -28,6 +34,7 @@
 - Separate login and remaining final smoke checks remain untested.
 
 ## Next 3 steps
-1. Recover the original blank file and reproduce with request logs.
-2. Review evidence and approve the smallest fix before source edits.
-3. Redesign the header/logo, then plan WebP and five-screen work.
+1. Add timing logs only after approval; reported 37-second scan cause unknown.
+2. Resolve WebP support or document PNG/JPEG-only scope.
+3. Redesign the header/logo and reduce the frontend to five screens.
+

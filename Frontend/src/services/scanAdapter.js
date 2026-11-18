@@ -2,6 +2,10 @@
 export function normalizeFieldStatus(status) {
   return status === 'pass' || status === 'fail' ? status : 'needs-review';
 }
+// Display original rule evidence; never promote a missing rule status to pass.
+export function fieldDisplayStatus(ruleStatus) {
+  return ruleStatus === 'exempt' ? 'exempt' : normalizeFieldStatus(ruleStatus);
+}
 export function normalizeOverallStatus(status) {
   const value = typeof status === 'string' ? status.replaceAll('_', '-') : '';
   if (value === 'compliant' || value === 'pass') return 'compliant';
@@ -20,7 +24,8 @@ export function adaptScanResponse(response) {
     images: (Array.isArray(data.images) ? data.images : legacy.imageUrls ?? [])
       .map((image, imageIndex) => typeof image === 'string' ? { url: image, imageIndex } : image),
     fields: fields.map(field => ({ ...field, value: field.value ?? null,
-      status: normalizeFieldStatus(field.status), ruleRef: field.ruleRef ?? field.ruleReference ?? null,
+      status: normalizeFieldStatus(field.status), ruleStatus: field.ruleStatus ?? null,
+      ruleRef: field.ruleRef ?? field.ruleReference ?? null,
       reason: field.reason ?? legacyFields.find(row => row.fieldName === field.fieldName)?.reason ?? null,
     })),
     estimatedValues: legacy.analysis?.estimatedValues ?? data.estimatedValues ?? [],

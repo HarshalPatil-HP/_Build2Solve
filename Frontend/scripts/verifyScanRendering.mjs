@@ -14,6 +14,11 @@ try {
     assert.doesNotMatch(html, />pass</);
   }
   const missing = renderToStaticMarkup(createElement(Font));
+  const exempt = renderToStaticMarkup(createElement(Row, {
+    title: 'Manufacturer', status: 'needs-review', ruleStatus: 'exempt', reason: 'Food exemption',
+  }));
+  assert.match(exempt, />Exempt</);
+  assert.match(exempt, /Food exemption/);
   assert.match(missing, /Measurement unavailable/);
   assert.doesNotMatch(missing, /2\.8|4\.0|330/);
   const measured = renderToStaticMarkup(createElement(Font, { measuredMm: 1.25, reqMinMm: 1.5 }));

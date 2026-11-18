@@ -1,10 +1,16 @@
 import PropTypes from 'prop-types';
 import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
-import { normalizeFieldStatus } from '../../services/scanAdapter';
+import { fieldDisplayStatus } from '../../services/scanAdapter';
 
-export default function FieldStatusRow({ title, ruleRef, status, extractedValue, reason, isEstimated }) {
+export default function FieldStatusRow({ title, ruleRef, ruleStatus, extractedValue, reason, isEstimated }) {
   const getStatusBadge = () => {
-    switch (normalizeFieldStatus(status)) {
+    switch (fieldDisplayStatus(ruleStatus)) {
+      case 'exempt':
+        return {
+          bg: 'bg-slate-50 text-slate-700 border-slate-200',
+          icon: null,
+          label: 'Exempt',
+        };
       case 'pass':
         return {
           bg: 'bg-green-50 text-status-compliant border-green-200',
@@ -72,6 +78,7 @@ FieldStatusRow.propTypes = {
   title: PropTypes.string.isRequired,
   ruleRef: PropTypes.string,
   status: PropTypes.string.isRequired,
+  ruleStatus: PropTypes.string,
   extractedValue: PropTypes.string,
   reason: PropTypes.string,
   isEstimated: PropTypes.bool,

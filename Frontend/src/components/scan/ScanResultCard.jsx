@@ -171,7 +171,7 @@ export default function ScanResultCard({ scanData, role, onFileComplaint, onLock
                 ...fields.filter(field => !['genericName', 'netQuantity', 'mrp', 'mfgDate', 'manufacturer', 'consumerCare'].includes(field.fieldName)),
               ].map((field, index) => (
                 <FieldStatusRow key={field.fieldName + index} title={field.fieldName}
-                  ruleRef={field.ruleRef} status={field.status}
+                  ruleRef={field.ruleRef} status={field.status} ruleStatus={field.ruleStatus}
                   extractedValue={field.value == null ? null : String(field.value)}
                   reason={field.reason} />
               ))}
