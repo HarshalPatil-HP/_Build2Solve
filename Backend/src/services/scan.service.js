@@ -35,6 +35,9 @@ const resolveMode = (role) => {
 };
 
 const createScan = async (req) => {
+  const started = Date.now();
+  const timings = { ocrMs: [], cloudinaryMs: null, rulesAndSaveMs: null };
+  try {
   const files = req.scanFiles || [];
   if (!files.length) throw new ApiError(400, 'At least one image is required (field: images)', 'VALIDATION_ERROR');
 
@@ -76,7 +79,9 @@ const createScan = async (req) => {
   for (const [imageIndex, file] of files.entries()) {
     const dimensions = getImageDimensions(file.buffer);
     if (!dimensions?.height) throw new ApiError(400, `Could not read dimensions for image ${imageIndex + 1}`, 'INVALID_IMAGE');
+    const ocrStarted = Date.now();
     const { rawText, blocks } = await runOcr(file.buffer);
+    timings.ocrMs.push(Date.now() - ocrStarted);
     // This catches blank or unreadable images, not unrelated images containing text.
     if (blocks.length < MIN_OCR_WORDS || rawText.trim().length < MIN_OCR_CHARS) {
       throw new ApiError(422, `Image ${imageIndex + 1} (index ${imageIndex}) is unreadable; provide a clear label image`, 'UNREADABLE_OR_NON_LABEL_IMAGE');
@@ -88,10 +93,14 @@ const createScan = async (req) => {
       blocks: blocks.map((block) => ({ ...block, imageIndex, imageHeightPx: dimensions.height })),
     });
   }
+  const uploadStarted = Date.now();
   const cloudResults = await Promise.all(files.map((file) => uploadImage(file.buffer)));
+  timings.cloudinaryMs = Date.now() - uploadStarted;
   const rawText = ocrResults.map((result, index) => `--- Image ${index + 1} ---\n${result.rawText}`).join('\n\n');
   const extracted = await extractFields(ocrResults, effectiveCategory);
 
+  // Includes rule queries and persistence; OCR and upload are measured separately.
+  const persistenceStarted = Date.now();
   if (!product) product = await Product.create({ name: productName, category, companyId });
 
   const analysis = await runRuleEngine({
@@ -187,8 +196,12 @@ const createScan = async (req) => {
   product.lastScannedAt = new Date();
   product.scanCount += 1;
   await product.save();
+  timings.rulesAndSaveMs = Date.now() - persistenceStarted;
 
   return { ...toContract(scan), scan, analysis, violations, product };
+  } finally {
+    console.info('[scan timing]', JSON.stringify({ ...timings, totalMs: Date.now() - started }));
+  }
 };
 
 const toContract = (scan) => ({

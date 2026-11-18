@@ -5,7 +5,7 @@ import FontCalibratorBox from './FontCalibratorBox';
 import VegDotConfirmBox from './VegDotConfirmBox';
 import { ShieldCheck, AlertTriangle, XCircle, FileText, Download, AlertCircle, Lock, Building } from 'lucide-react';
 import { adaptScanResponse, getScanField, getFontMeasurement } from '../../services/scanAdapter';
-import { scanService } from '../../services/scanService';
+import ReportDownloadButton from '../../components/scan/ReportDownloadButton';
 
 export default function ScanResultCard({ scanData, role, onFileComplaint, onLockCase }) {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
@@ -55,8 +55,6 @@ export default function ScanResultCard({ scanData, role, onFileComplaint, onLock
   };
 
   const banner = getStatusBanner();
-  const pdfUrl = scanService.getReportUrl(scanId, 'pdf');
-  const docxUrl = scanService.getReportUrl(scanId, 'docx');
 
   return (
     <div className="space-y-6 font-sans">
@@ -74,24 +72,18 @@ export default function ScanResultCard({ scanData, role, onFileComplaint, onLock
         </div>
 
         <div className="hidden sm:flex items-center gap-2">
-          <a
-            href={pdfUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <ReportDownloadButton scanId={scanId} format="pdf"
             className="flex items-center gap-1.5 rounded-lg bg-white/20 hover:bg-white/30 px-3 py-2 text-xs font-bold backdrop-blur-xs transition-colors"
           >
             <Download className="h-4 w-4" />
             <span>PDF Docket</span>
-          </a>
-          <a
-            href={docxUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          </ReportDownloadButton>
+          <ReportDownloadButton scanId={scanId} format="docx"
             className="flex items-center gap-1.5 rounded-lg bg-white/20 hover:bg-white/30 px-3 py-2 text-xs font-bold backdrop-blur-xs transition-colors"
           >
             <FileText className="h-4 w-4" />
             <span>DOCX</span>
-          </a>
+          </ReportDownloadButton>
         </div>
       </div>
 
@@ -189,24 +181,18 @@ export default function ScanResultCard({ scanData, role, onFileComplaint, onLock
           {/* User & Inspector Action Footer */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
             <div className="flex gap-2 w-full sm:w-auto">
-              <a
-                href={pdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <ReportDownloadButton scanId={scanId} format="pdf"
                 className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-4 py-2.5 text-xs font-bold text-text-primary hover:bg-bg transition-colors"
               >
                 <Download className="h-4 w-4 text-primary" />
                 <span>PDF Docket</span>
-              </a>
-              <a
-                href={docxUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              </ReportDownloadButton>
+              <ReportDownloadButton scanId={scanId} format="docx"
                 className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-4 py-2.5 text-xs font-bold text-text-primary hover:bg-bg transition-colors"
               >
                 <FileText className="h-4 w-4 text-primary" />
                 <span>DOCX Docket</span>
-              </a>
+              </ReportDownloadButton>
             </div>
 
             {role === 'user' && overallStatus === 'non-compliant' && onFileComplaint && (

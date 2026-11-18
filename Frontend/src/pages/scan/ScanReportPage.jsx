@@ -1,13 +1,11 @@
 import { useParams, useNavigate } from 'react';
-import { scanService } from '../../services/scanService';
+import ReportDownloadButton from '../../components/scan/ReportDownloadButton';
 import { Download, FileText, ArrowLeft, Shield, CheckCircle2 } from 'lucide-react';
 
 export default function ScanReportPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const pdfUrl = scanService.getReportUrl(id, 'pdf');
-  const docxUrl = scanService.getReportUrl(id, 'docx');
 
   return (
     <div className="max-w-2xl mx-auto py-8 space-y-6">
@@ -45,25 +43,19 @@ export default function ScanReportPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-          <a
-            href={pdfUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <ReportDownloadButton scanId={id} format="pdf"
             className="flex items-center justify-center gap-2 rounded-xl bg-primary py-3.5 px-4 text-sm font-bold text-white shadow-md hover:bg-primary-light transition-all"
           >
             <Download className="h-5 w-5 text-accent-saffron" />
             <span>Download PDF Docket</span>
-          </a>
+          </ReportDownloadButton>
 
-          <a
-            href={docxUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <ReportDownloadButton scanId={id} format="docx"
             className="flex items-center justify-center gap-2 rounded-xl border-2 border-primary bg-surface py-3.5 px-4 text-sm font-bold text-primary hover:bg-primary/5 transition-all"
           >
             <FileText className="h-5 w-5" />
             <span>Download Editable DOCX</span>
-          </a>
+          </ReportDownloadButton>
         </div>
       </div>
     </div>

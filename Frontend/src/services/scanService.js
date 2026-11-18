@@ -1,6 +1,14 @@
 import apiClient from './apiClient';
 
 export const scanService = {
+  getReportFile: async (scanId, format = 'pdf') => {
+    if (!/^[a-f\d]{24}$/i.test(scanId || '')) throw new Error('Valid scan ID required.');
+    if (!['pdf', 'docx'].includes(format)) throw new Error('Unsupported report format.');
+    const response = await apiClient.get(`/scans/${scanId}/report?format=${format}`);
+    const url = response?.data?.fileUrl;
+    if (typeof url !== 'string' || !url.startsWith('https://')) throw new Error('Report file unavailable.');
+    return url;
+  },
   // Create scan with multi-image upload (multipart/form-data)
   createScan: async (formData) => {
     return apiClient.post('/scans', formData, {
