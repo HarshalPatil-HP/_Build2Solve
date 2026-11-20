@@ -58,7 +58,7 @@ const generatePdf = async (scan, violations, generatedBy) => {
   await done;
 
   const buffer = Buffer.concat(chunks);
-  const filename = `report-${scan._id}-${Date.now()}`;
+  const filename = `report-${scan._id}-${Date.now()}.pdf`;
   const result = await uploadRaw(buffer, filename);
   const report = await Report.create({
     scanId: scan._id,
