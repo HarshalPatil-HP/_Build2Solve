@@ -59,7 +59,11 @@ async function verifyRule26Quantity() {
 async function verifyExtraction() {
   const { extractFields } = require('../src/services/extraction.service');
   const originalFind = Rule.find;
-  Rule.find = () => ({ sort() { return this; }, lean: async () => [] });
+  const rules = [{ fieldName: 'netQuantity', ruleNumber: 'Rule 6(c)' },
+    { fieldName: 'fontSize', ruleNumber: 'Rule 7' }];
+  Rule.find = query => ({ sort() { return this; }, lean: async () => query.validationType ? [] : rules });
+  const evaluate = extracted => runRuleEngine({ category: 'other', extracted,
+    matchedBlocks: extracted.matchedBlocks, rawText: '', imageHeightPx: 100 });
   try {
     const extract = async (text) => {
       const blocks = [];
@@ -86,7 +90,16 @@ async function verifyExtraction() {
       const unresolved = await extract(text);
       assert.equal(unresolved.fields.netQuantity, null);
       assert.equal(unresolved.matchedBlocks.netQuantity, null);
+      const analysis = await evaluate(unresolved);
+      for (const name of ['netQuantity', 'fontSize']) {
+        assert.equal(analysis.fields.find(field => field.fieldName === name)?.status, 'needs-review');
+      }
     }
+    const legacy = await extract('NET WT 100g');
+    legacy.fields.netQuantity = '0g';
+    legacy.fieldConfidence.netQuantity = 99;
+    assert.equal((await evaluate(legacy)).fields.find(f => f.fieldName === 'netQuantity').status, 'needs-review');
+    console.log('Rule checks passed: unresolved quantity and font need review; high-confidence zero needs review');
     console.log('Extraction passed: anchored quantity, word offsets and confidence, unresolved values');
   } finally {
     Rule.find = originalFind;

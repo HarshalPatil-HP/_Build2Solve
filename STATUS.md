@@ -1,6 +1,8 @@
 # SahiScan status
 
 ## Done and verified
+- Backend `npm run test:core` passed for OCR word offsets, quantity selection and unresolved quantity/font checks.
+- Offline Gits label replay with seed rules: netQuantity and fontSize both null, needs-review.
 - Phase 2 Task 1: removed unused preview switcher/context after reverse-import checks.
 - Task 1 lint exit 0 (warnings); build built in 1.53s; adapter/render/report scripts PASS.
 - Task 1 browser checks: UNTESTED.

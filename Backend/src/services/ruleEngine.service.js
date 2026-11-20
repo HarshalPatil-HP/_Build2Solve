@@ -158,7 +158,7 @@ const runRuleEngine = async ({
   }
 
   const qtyGrams = parseQuantityGrams(fields.netQuantity);
-  if (qtyGrams !== null && qtyGrams > 0 && qtyGrams <= 10 && !isTobacco) {
+  if (qtyGrams !== null && qtyGrams > 0 && qtyGrams <= 10 && !conflicts.netQuantity && !isTobacco) {
     exemptionsApplied.push('Rule 26 — net quantity ≤10g/10ml');
     return {
       overallStatus: 'compliant',
@@ -197,7 +197,10 @@ const runRuleEngine = async ({
     const confidence = fieldConfidence[check.name] || 0;
     let status = fields[check.name] ? 'pass' : 'fail';
     let reason = fields[check.name] ? 'Declaration detected' : 'Mandatory declaration missing';
-    if (conflicts[check.name]) {
+    if (check.name === 'netQuantity' && !(qtyGrams > 0)) {
+      status = 'needs-review';
+      reason = 'A positive net quantity could not be verified';
+    } else if (conflicts[check.name]) {
       status = 'needs-review';
       reason = 'Conflicting values were detected across label images; manual verification required';
     } else if (fields[check.name] && confidence < LOW_CONFIDENCE_THRESHOLD) {
