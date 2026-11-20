@@ -36,6 +36,10 @@
 - Header/logo redesign requested; no redesign applied.
 
 ## Not yet tested
+- Phase 2 Task 2 stopped: Python cp1252 decode error reading Header.jsx.
+- Partial navigation edits are uncommitted and UNTESTED; no page files deleted.
+- Task 2 role test, lint/build and regression scripts were not run.
+- Task 2 browser checks: UNTESTED.
 - report opening in a real browser and scan latency: UNTESTED
 - Blank failure root cause: unconfirmed.
 - Exact blank temp file is unavailable; curl failed with code 26.
@@ -49,3 +53,12 @@
 1. Collect timing measurements; reported 37-second scan cause unknown.
 2. Resolve WebP support or document PNG/JPEG-only scope.
 3. Redesign the header/logo and reduce the frontend to five screens.
+
+## Phase 2 Task 2 — navigation
+- Active user/company/inspector login paths now open /scan; admin opens /admin/dashboard.
+- Pending/rejected inspector accounts see a blocked state; unauthenticated returns to /auth.
+- Sidebar and page metadata now describe the five kept screens; removed notification and result complaint/case actions.
+- Role test: node scripts/verifyFiveScreenRoles.mjs PASS.
+- Frontend npm run lint: exit 0 with existing warnings. npm run build: 2935 modules, built in 1.75s (large bundle warning).
+- verifyScanAdapter.mjs, verifyScanRendering.mjs, verifyReportDownload.mjs: PASS.
+- Browser checks: UNTESTED. Old page files retained. No scans or uploads.

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import ScanResultCard from '../../components/scan/ScanResultCard';
 import { scanService } from '../../services/scanService';
-import { caseService } from '../../services/caseService';
 import { useAuth } from '../../context/AuthContext';
 import { adaptScanResponse } from '../../services/scanAdapter';
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
@@ -40,23 +39,6 @@ export default function ScanResultPage() {
     }
     return () => { cancelled = true; };
   }, [id, location.state]);
-
-  const handleFileComplaint = () => {
-    navigate(`/complaints/new/${id}`, { state: { scan } });
-  };
-
-  const handleLockCase = async () => {
-    if (!window.confirm('Formalize this scan into an official locked inspection case? Locked evidence cannot be altered.')) {
-      return;
-    }
-    try {
-      const res = await caseService.createCase({ scanId: id });
-      const newCase = res.data || res;
-      navigate(`/inspector/cases/${newCase._id || newCase.id}`);
-    } catch (err) {
-      alert(err.message || 'Failed to create official case.');
-    }
-  };
 
   if (loading) {
     return (
@@ -107,8 +89,6 @@ export default function ScanResultPage() {
       <ScanResultCard
         scanData={scan}
         role={role}
-        onFileComplaint={handleFileComplaint}
-        onLockCase={handleLockCase}
       />
     </div>
   );

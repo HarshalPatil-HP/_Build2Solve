@@ -48,7 +48,7 @@ export default function Sidebar({ open, onClose }) {
             ))}
           </nav>
 
-          <div className="pt-4 border-t border-border">
+          {user?.role !== 'admin' && <div className="pt-4 border-t border-border">
             <Link
               to="/scan"
               onClick={onClose}
@@ -57,7 +57,7 @@ export default function Sidebar({ open, onClose }) {
               <Camera className="h-4 w-4" />
               <span>Scan Product Label</span>
             </Link>
-          </div>
+          </div>}
         </div>
       </aside>
     </>

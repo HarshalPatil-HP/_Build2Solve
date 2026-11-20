@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useAuth } from '../../context/AuthContext';
 import StatusPill from '../common/StatusPill';
-import { Menu, Bell, LogOut, Shield, User } from 'lucide-react';
+import { Menu, LogOut, Shield, User } from 'lucide-react';
 
 const APP_NAME = 'SahiScan | सही स्कैन';
 
@@ -46,18 +46,6 @@ export default function Header({ onMenuClick, showUserChrome }) {
         <div className="ml-auto flex items-center gap-3">
           {showUserChrome && user ? (
             <>
-              <Link
-                to="/notifications"
-                className="relative rounded-lg border border-border p-2 text-text-secondary hover:bg-bg hover:text-primary transition-colors"
-                aria-label="Notifications"
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute right-1 top-1 flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-saffron opacity-75"></span>
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-accent-saffron"></span>
-                </span>
-              </Link>
-
               <div className="hidden text-right sm:block">
                 <p className="text-sm font-semibold text-text-primary leading-tight">{user.name}</p>
                 <div className="flex justify-end gap-1 mt-0.5">
