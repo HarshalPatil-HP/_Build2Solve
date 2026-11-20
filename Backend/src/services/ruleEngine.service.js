@@ -158,7 +158,7 @@ const runRuleEngine = async ({
   }
 
   const qtyGrams = parseQuantityGrams(fields.netQuantity);
-  if (qtyGrams !== null && qtyGrams <= 10 && !isTobacco) {
+  if (qtyGrams !== null && qtyGrams > 0 && qtyGrams <= 10 && !isTobacco) {
     exemptionsApplied.push('Rule 26 — net quantity ≤10g/10ml');
     return {
       overallStatus: 'compliant',
@@ -307,9 +307,12 @@ const runRuleEngine = async ({
 
   const hasFail = fieldResults.some((f) => f.status === 'fail');
   const hasReview = fieldResults.some((f) => ['needs-review', 'requires-visual-verification', 'warning'].includes(f.status));
+  const requiredFieldsVerified = declarationFields
+    .filter((name) => !exemptions[name])
+    .every((name) => fieldResults.some((field) => field.fieldName === name && field.status === 'pass'));
 
   return {
-    overallStatus: hasFail ? 'non-compliant' : hasReview ? 'needs-review' : 'compliant',
+    overallStatus: hasFail ? 'non-compliant' : hasReview || !requiredFieldsVerified ? 'needs-review' : 'compliant',
     fields: fieldResults,
     estimatedValues,
     exemptionsApplied,

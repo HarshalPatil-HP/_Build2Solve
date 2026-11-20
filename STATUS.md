@@ -62,3 +62,9 @@
 - Frontend npm run lint: exit 0 with existing warnings. npm run build: 2935 modules, built in 1.75s (large bundle warning).
 - verifyScanAdapter.mjs, verifyScanRendering.mjs, verifyReportDownload.mjs: PASS.
 - Browser checks: UNTESTED. Old page files retained. No scans or uploads.
+
+## Rule 26 exemption fix
+- Exemption now requires parsed quantity >0 and <=10 g/ml; 0 and missing proceed to review.
+- Required declarations must be verified before a normal path can report compliant.
+- Backend npm run test:core: Offline core verification PASSED; four Rule 26 quantity cases passed.
+- No scan or upload run.
