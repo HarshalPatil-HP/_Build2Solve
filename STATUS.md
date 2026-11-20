@@ -1,6 +1,7 @@
 # SahiScan status
 
 ## Done and verified
+- Router exposes Auth, Scan, Result, History and Admin. Root/login/signup redirect to Auth; unknown paths render inline.
 - Backend `npm run test:core` passed for OCR word offsets, quantity selection and unresolved quantity/font checks.
 - Offline Gits label replay with seed rules: netQuantity and fontSize both null, needs-review.
 - Phase 2 Task 1: removed unused preview switcher/context after reverse-import checks.
