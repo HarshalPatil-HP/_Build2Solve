@@ -184,9 +184,9 @@ export default function HistoryPage() {
                     View Docket
                   </Link>
                   <Link
-                    to={`/scan/${scanId}/report`}
+                    to={`/scan/${scanId}/result`}
                     className="rounded-lg bg-primary/10 p-2 text-primary hover:bg-primary/20 transition-colors"
-                    title="Download Report"
+                    title="Open result for report downloads"
                   >
                     <FileText className="h-4 w-4" />
                   </Link>

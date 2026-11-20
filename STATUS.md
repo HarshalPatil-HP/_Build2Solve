@@ -1,6 +1,7 @@
 # SahiScan status
 
 ## Done and verified
+- History report links open Result. Breadcrumbs link only to configured pages. Browser checks: UNTESTED.
 - Removed 44 unreferenced pages from the approved inventory. Frontend lint/build and all four verification scripts exited 0.
 - Router exposes Auth, Scan, Result, History and Admin. Root/login/signup redirect to Auth; unknown paths render inline.
 - Backend `npm run test:core` passed for OCR word offsets, quantity selection and unresolved quantity/font checks.

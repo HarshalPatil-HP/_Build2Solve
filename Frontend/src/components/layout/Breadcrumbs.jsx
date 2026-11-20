@@ -12,7 +12,7 @@ function titleForPath(pathname) {
   const exact = ALL_PAGE_META.find((p) => p.route === pathname);
   if (exact) return exact.title;
   const dynamic = ALL_PAGE_META.find((p) => p.route.includes(':') && matchPattern(p.route, pathname));
-  return dynamic?.title || pathname;
+  return dynamic?.title;
 }
 
 function matchPattern(pattern, pathname) {
@@ -28,7 +28,7 @@ export default function Breadcrumbs() {
   const crumbs = parts.map((_, i) => {
     const href = `/${parts.slice(0, i + 1).join('/')}`;
     return { href, label: titleForPath(href) };
-  });
+  }).filter(crumb => crumb.label);
 
   return (
     <nav className="mb-4 text-sm text-text-secondary" aria-label="Breadcrumb">
