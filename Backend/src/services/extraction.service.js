@@ -22,24 +22,65 @@ const normalise = (value) => value.toLowerCase().replace(/\s+/g, ' ').trim();
 
 const allMatches = (text, pattern, field) => {
   const flags = pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`;
-  const regex = new RegExp(pattern.source, flags);
+  const regex = new RegExp(pattern.source, flags + 'd');
   const matches = [];
   let match;
   while ((match = regex.exec(text)) !== null) {
     // The value after “Marketed by:” is the declaration, not the label itself.
-    const value = ['manufacturer', 'consumerCare'].includes(field) && match[1] ? match[1] : match[0];
-    matches.push({ value: value.trim(), index: match.index });
+    const group = ['manufacturer', 'consumerCare'].includes(field) && match[1] ? 1 : 0;
+    const value = match[group].trim();
+    const index = match.indices[group][0] + match[group].indexOf(value);
+    matches.push({ value, index });
     if (!match[0].length) regex.lastIndex += 1;
   }
   return matches;
 };
 
-const findBlocksForMatch = (blocks, matchText) => {
-  const tokens = normalise(matchText).match(/[a-z0-9]+/g) || [];
-  if (!tokens.length) return [];
-  return blocks.filter((block) => {
-    const word = normalise(block.text);
-    return tokens.some((token) => word.includes(token) || token.includes(word));
+// Tesseract returns words in reading order. Stop at a mismatch rather than
+// borrowing a box from a later occurrence of the same word.
+const indexWords = (text, blocks) => {
+  const words = [];
+  let offset = 0;
+  for (const block of blocks) {
+    while (offset < text.length && /\s/.test(text[offset])) offset++;
+    const word = block.text.trim();
+    if (!word) continue;
+    if (!text.startsWith(word, offset)) break;
+    words.push({ start: offset, end: offset + word.length, block });
+    offset += word.length;
+  }
+  return words;
+};
+
+const wordsIn = (words, start, end) =>
+  words.filter(word => word.start < end && word.end > start).map(word => word.block);
+
+const quantityHeading = /\bNET\s+(?:WT\.?|WEIGHT|QUANTITY)\b/gi;
+const otherQuantityContext = /\b(?:sugars?|fat|energy|per\s+serv(?:e|ing)|cook|add|each)\b/i;
+
+const isDeclaredQuantity = (text, match, words, boxes) => {
+  if (!(parseFloat(match.value) > 0) || !boxes.length) return false;
+  const lineStart = text.lastIndexOf('\n', match.index - 1) + 1;
+  const lineEnd = text.indexOf('\n', match.index + match.value.length);
+  const line = text.slice(lineStart, lineEnd < 0 ? text.length : lineEnd);
+  if (otherQuantityContext.test(line)) return false;
+
+  return Array.from(text.matchAll(quantityHeading)).some(heading => {
+    const end = heading.index + heading[0].length;
+    const gap = text.slice(end, match.index);
+    if (end > match.index || !/^[ \t.:–-]*\r?\n?[ \t.:–-]*$/.test(gap)) return false;
+    const headingBoxes = wordsIn(words, heading.index, end);
+    if (!headingBoxes.length) return false;
+    const first = headingBoxes[0];
+    const last = headingBoxes[headingBoxes.length - 1];
+    const value = boxes[0];
+    const height = Math.max(last.height, value.height);
+    const rightGap = value.x - (last.x + last.width);
+    const belowGap = value.y - (last.y + last.height);
+    const right = Math.abs(value.y - last.y) <= height && rightGap >= 0 && rightGap <= 6 * height;
+    const below = belowGap >= 0 && belowGap <= 2 * height &&
+      value.x >= first.x - height && value.x <= last.x + last.width + height;
+    return right || below;
   });
 };
 
@@ -61,12 +102,14 @@ const extractFields = async (ocrResults, category = 'all') => {
   const fssaiLicenseNumbers = new Set();
   const allBlockConfidences = [];
   for (const { rawText, blocks, imageIndex } of ocrResults) {
+    const words = indexWords(rawText, blocks);
     blocks.forEach((block) => allBlockConfidences.push(block.confidence || 0));
     const fssai = rawText.match(FSSAI_PATTERN);
     if (fssai?.[1]) fssaiLicenseNumbers.add(fssai[1]);
     for (const [field, pattern] of Object.entries(patterns)) {
       for (const match of allMatches(rawText, pattern, field)) {
-        const matchedBlocks = findBlocksForMatch(blocks, match.value);
+        const matchedBlocks = wordsIn(words, match.index, match.index + match.value.length);
+        if (field === 'netQuantity' && !isDeclaredQuantity(rawText, match, words, matchedBlocks)) continue;
         const confidence = matchedBlocks.length
           ? matchedBlocks.reduce((sum, block) => sum + Number(block.confidence || 0), 0) / matchedBlocks.length
           : 0;

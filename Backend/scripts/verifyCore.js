@@ -55,7 +55,45 @@ async function verifyRule26Quantity() {
   }
 }
 
-verifyRule26Quantity().catch((error) => {
+// Duplicate words have deliberately different locations and confidence scores.
+async function verifyExtraction() {
+  const { extractFields } = require('../src/services/extraction.service');
+  const originalFind = Rule.find;
+  Rule.find = () => ({ sort() { return this; }, lean: async () => [] });
+  try {
+    const extract = async (text) => {
+      const blocks = [];
+      text.split('\n').forEach((line, row) => {
+        for (const word of line.matchAll(/\S+/g)) {
+          blocks.push({ text: word[0], x: word.index * 8, y: row * 18,
+            width: word[0].length * 8, height: 12, confidence: 50 + blocks.length });
+        }
+      });
+      return extractFields([{ rawText: text, blocks, imageIndex: 0 }]);
+    };
+    const prefix = 'Acme sugars 0g\nCook 100g each\nManufacturer: Acme\nNET WT';
+    const valid = await extract(prefix + ' 100g');
+    assert.equal(valid.fields.netQuantity, '100g');
+    assert.equal(valid.matchedBlocks.netQuantity.x, 56);
+    assert.equal(valid.matchedBlocks.netQuantity.y, 54);
+    assert.equal(valid.fieldConfidence.netQuantity, 60);
+    const manufacturer = await extract('Acme\nMarketed by: Acme');
+    assert.equal(manufacturer.matchedBlocks.manufacturer.y, 18);
+    assert.equal(manufacturer.fieldConfidence.manufacturer, 53);
+    const below = await extract('NET WEIGHT\n100g');
+    assert.equal(below.fields.netQuantity, '100g');
+    for (const text of [prefix + ' wg', '0g', 'NET WT 0g', 'NET WT 20g each']) {
+      const unresolved = await extract(text);
+      assert.equal(unresolved.fields.netQuantity, null);
+      assert.equal(unresolved.matchedBlocks.netQuantity, null);
+    }
+    console.log('Extraction passed: anchored quantity, word offsets and confidence, unresolved values');
+  } finally {
+    Rule.find = originalFind;
+  }
+}
+
+verifyRule26Quantity().then(verifyExtraction).catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
