@@ -1,6 +1,7 @@
 # SahiScan status
 
 ## Done and verified
+- Five lazy page chunks verified by Frontend npm run build (1.01s). Lint and all four verification scripts exited 0. Browser checks: UNTESTED.
 - History report links open Result. Breadcrumbs link only to configured pages. Browser checks: UNTESTED.
 - Removed 44 unreferenced pages from the approved inventory. Frontend lint/build and all four verification scripts exited 0.
 - Router exposes Auth, Scan, Result, History and Admin. Root/login/signup redirect to Auth; unknown paths render inline.

@@ -1,13 +1,15 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, RouterProvider, createBrowserRouter, createRoutesFromElements } from 'react-router-dom';
 import AppShell from '../components/layout/AppShell';
 import PublicShell from '../components/layout/PublicShell';
 import RequireRole from './RequireRole';
 import RedirectIfAuthed from './RedirectIfAuthed';
-import AuthPage from '../pages/auth/AuthPage';
-import ScanPage from '../pages/scan/ScanPage';
-import ScanResultPage from '../pages/scan/ScanResultPage';
-import HistoryPage from '../pages/shared/HistoryPage';
-import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
+
+const AuthPage = lazy(() => import('../pages/auth/AuthPage'));
+const ScanPage = lazy(() => import('../pages/scan/ScanPage'));
+const ScanResultPage = lazy(() => import('../pages/scan/ScanResultPage'));
+const HistoryPage = lazy(() => import('../pages/shared/HistoryPage'));
+const AdminDashboardPage = lazy(() => import('../pages/admin/AdminDashboardPage'));
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -30,5 +32,9 @@ const router = createBrowserRouter(
 );
 
 export default function AppRouter() {
-  return <RouterProvider router={router} />;
+  return (
+    <Suspense fallback={<p role="status">Loading page…</p>}>
+      <RouterProvider router={router} />
+    </Suspense>
+  );
 }
