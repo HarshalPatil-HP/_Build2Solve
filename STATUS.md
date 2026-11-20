@@ -1,6 +1,7 @@
 # SahiScan status
 
 ## Done and verified
+- Gemini low-latency spike: `node --env-file-if-exists=.env scripts/gemini-extract-spike.js --low-latency` exited 0 in Backend. Eight requests, 56 field comparisons and 16 local overlay PNGs.
 - Gemini spike: `node --env-file-if-exists=.env scripts/gemini-extract-spike.js` exited 0 in Backend. Eight images and 56 field comparisons are recorded in docs/GEMINI_SPIKE.md.
 - Backend `npm run test:core` passed for OCR word offsets, quantity selection and unresolved quantity/font checks.
 - Offline Gits label replay with seed rules: netQuantity and fontSize both null, needs-review.

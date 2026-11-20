@@ -74,3 +74,73 @@ From Backend run `node --env-file-if-exists=.env scripts/gemini-extract-spike.js
 | blank.png | genericName | null | null | 2913 | 216 | false / false | — | 0 | — |
 | blank.png | consumerCare | null | null | 2913 | 216 | false / false | — | 0 | — |
 | blank.png | countryOfOrigin | null | null | 2913 | 216 | false / false | — | 0 | — |
+
+## Privacy and latency settings
+
+- **Yes.** Under the unpaid-service terms Google uses submitted content (including images) and responses to develop and improve its products. Human reviewers may process them. Google advises against submitting personal, confidential or sensitive content. Paid-service data handling applies in the EEA, Switzerland and UK even for unpaid quota. This project's billing tier is UNVERIFIED. [Terms](https://ai.google.dev/gemini-api/terms)
+- The variant explicitly requests MINIMAL thinking. This is already the documented default for Gemini 3.5 Flash-Lite, so a measured difference cannot be attributed to switching thinking off. [Thinking levels](https://ai.google.dev/gemini-api/docs/thinking)
+- Low media resolution uses fewer visual tokens and may lose fine print. Separately, the client scales the oriented image to 80% of its original linear dimensions or a longest edge of 960 px, whichever is smaller, and encodes JPEG at quality 88. No cropping or padding. The independent latency effect of downscaling is UNVERIFIED. [Media resolution](https://ai.google.dev/gemini-api/docs/media-resolution) · [Image processing](https://ai.google.dev/gemini-api/docs/image-understanding)
+- Compact JSON retains only the seven values and their boxes. The response limit is 1,024 tokens. A cap alone does not establish a speedup; the independent effect of response length here is UNVERIFIED. [Generation configuration](https://ai.google.dev/api/generate-content#GenerationConfig)
+- Run `node --env-file-if-exists=.env scripts/gemini-extract-spike.js --low-latency` from Backend with Python and Pillow installed. Each image gets one request. Timings cover the Gemini request through response parsing, excluding local resize and overlay rendering. Before/after values are compared as recorded in Markdown, including case and punctuation and collapsing whitespace. Each latency is repeated for its seven fields.
+- Overlay PNGs in `docs/spike-overlays/` have baseline and low-latency suffixes. Both use the oriented full-size source. The box order is [ymin, xmin, ymax, xmax] on a 0–1000 scale. Each x edge is multiplied by source width / 1000 and each y edge by source height / 1000, rounded and clipped at the last pixel. Null boxes draw nothing. [Google's box convention](https://ai.google.dev/gemini-api/docs/image-understanding#object-detection)
+
+## Low-latency run 2026-11-20T06:07:59.557Z
+
+| Image | Field | Before | After | Changed | Before ms | After ms | After box |
+|---|---|---|---|---|---:|---:|---|
+| Gemini_Generated_Image_5gedn45gedn45ged.png | netQuantity | 10 kg | 10 kg | no | 17554 | 9231 | 740, 314, 756, 356 |
+| Gemini_Generated_Image_5gedn45gedn45ged.png | mrp | null | null | no | 17554 | 9231 | — |
+| Gemini_Generated_Image_5gedn45gedn45ged.png | mfgDate | null | null | no | 17554 | 9231 | — |
+| Gemini_Generated_Image_5gedn45gedn45ged.png | manufacturer | Paribit Agri Industries Limited | RODI01 ADDG Mingream Ltd. Appennor Route No 6x, 601 02 3 Po Rome, Prise Koryza Rags, Nissin Se. Hazere Part On. 021: 783-6519370 | yes | 17554 | 9231 | 561, 541, 585, 686 |
+| Gemini_Generated_Image_5gedn45gedn45ged.png | genericName | WHEAT FLOUR (ATTA) | WHEAT FLOUR (ATTA) | no | 17554 | 9231 | 401, 259, 418, 386 |
+| Gemini_Generated_Image_5gedn45gedn45ged.png | consumerCare | null | services@apam.com.at | yes | 17554 | 9231 | 805, 564, 812, 630 |
+| Gemini_Generated_Image_5gedn45gedn45ged.png | countryOfOrigin | INDIA | PRODUCT OF INDIA | yes | 17554 | 9231 | 665, 303, 674, 382 |
+| Gemini_Generated_Image_e9sd44e9sd44e9sd.png | netQuantity | 94g | 94g | no | 18033 | 10777 | 860, 277, 892, 359 |
+| Gemini_Generated_Image_e9sd44e9sd44e9sd.png | mrp | null | null | no | 18033 | 10777 | — |
+| Gemini_Generated_Image_e9sd44e9sd44e9sd.png | mfgDate | null | null | no | 18033 | 10777 | — |
+| Gemini_Generated_Image_e9sd44e9sd44e9sd.png | manufacturer | PepsiCo India Holdings Pvt. Ltd. | PEPSICO INDIA HOLDINGS PVT. LTD. | yes | 18033 | 10777 | 677, 539, 697, 705 |
+| Gemini_Generated_Image_e9sd44e9sd44e9sd.png | genericName | Namkeen | NAMKEEN (15.1) | yes | 18033 | 10777 | 339, 263, 359, 368 |
+| Gemini_Generated_Image_e9sd44e9sd44e9sd.png | consumerCare | THE CONSUMER SERVICES MANAGER, PEPSICO INDIA HOLDINGS PVT. LTD., P.O. BOX-27, DLF QUTAB ENCLAVE, PHASE-1, GURUGRAM - 122002, HARYANA, INDIA. OR CALL US AT 1800 22 4020 OR EMAIL US AT CONSUMER.FEEDBACK@PEPSICO.COM | 1800 22 4020 | yes | 18033 | 10777 | 741, 567, 757, 663 |
+| Gemini_Generated_Image_e9sd44e9sd44e9sd.png | countryOfOrigin | null | null | no | 18033 | 10777 | — |
+| Gemini_Generated_Image_w1ipkww1ipkww1ip.png | netQuantity | 100g | 100g | no | 35110 | 28046 | 735, 501, 761, 619 |
+| Gemini_Generated_Image_w1ipkww1ipkww1ip.png | mrp | null | 85.00 | yes | 35110 | 28046 | 579, 608, 589, 647 |
+| Gemini_Generated_Image_w1ipkww1ipkww1ip.png | mfgDate | null | null | no | 35110 | 28046 | — |
+| Gemini_Generated_Image_w1ipkww1ipkww1ip.png | manufacturer | GITS FOOD PRODUCTS PVT. LTD. | GITS FOOD PRODUCTS PVT. LTD. | no | 35110 | 28046 | 794, 498, 809, 773 |
+| Gemini_Generated_Image_w1ipkww1ipkww1ip.png | genericName | Gulab Jamun mix | Gulab Jamun | yes | 35110 | 28046 | 237, 174, 252, 350 |
+| Gemini_Generated_Image_w1ipkww1ipkww1ip.png | consumerCare | 020-6249 4000 | 020-6249 4000 | no | 35110 | 28046 | 844, 674, 860, 770 |
+| Gemini_Generated_Image_w1ipkww1ipkww1ip.png | countryOfOrigin | null | null | no | 35110 | 28046 | — |
+| test1.jpg | netQuantity | null | null | no | 3579 | 16457 | — |
+| test1.jpg | mrp | null | null | no | 3579 | 16457 | — |
+| test1.jpg | mfgDate | null | null | no | 3579 | 16457 | — |
+| test1.jpg | manufacturer | PepsiCo India Holdings Pvt. Ltd. | PepsiCo India Holdings Pvt. Ltd. | no | 3579 | 16457 | 227, 112, 257, 827 |
+| test1.jpg | genericName | null | null | no | 3579 | 16457 | — |
+| test1.jpg | consumerCare | THE CONSUMER SERVICES MANAGER, PEPSICO INDIA HOLDINGS PVT. LTD., P.O. BOX-27, DLF QUTAB ENCLAVE, PHASE-1, GURUGRAM - 122002, HARYANA, INDIA. OR CALL US AT 1800 22 4020 OR EMAIL US AT CONSUMER.FEEDBACK@PEPSICO.COM | CONSUMER.FEEDBACK@PEPSICO.COM | yes | 3579 | 16457 | 847, 180, 902, 841 |
+| test1.jpg | countryOfOrigin | INDIA | null | yes | 3579 | 16457 | — |
+| test2.jpeg | netQuantity | 118 g | 118 g | no | 11035 | 4728 | 176, 230, 205, 279 |
+| test2.jpeg | mrp | 35/- | null | yes | 11035 | 4728 | — |
+| test2.jpeg | mfgDate | null | 09/08/26 | yes | 11035 | 4728 | 200, 177, 222, 242 |
+| test2.jpeg | manufacturer | PEPSICO INDIA HOLDINGS PVT. LTD. | PEPSICO INDIA HOLDINGS PVT. LTD. | no | 11035 | 4728 | 522, 378, 561, 890 |
+| test2.jpeg | genericName | null | null | no | 11035 | 4728 | — |
+| test2.jpeg | consumerCare | CONSUMER.FEEDBACK@PEPSICO.COM | 1800 22 4020 | yes | 11035 | 4728 | 739, 218, 762, 348 |
+| test2.jpeg | countryOfOrigin | null | null | no | 11035 | 4728 | — |
+| test3.jpeg | netQuantity | null | null | no | 3467 | 4036 | — |
+| test3.jpeg | mrp | Rs. 35/- | 35/- | yes | 3467 | 4036 | 766, 138, 787, 185 |
+| test3.jpeg | mfgDate | null | 09/08/26 | yes | 3467 | 4036 | 786, 432, 798, 508 |
+| test3.jpeg | manufacturer | null | PEPSICO INDIA HOLDINGS | yes | 3467 | 4036 | 680, 848, 701, 1000 |
+| test3.jpeg | genericName | Namkeen | NAMKEEN | yes | 3467 | 4036 | 173, 277, 193, 352 |
+| test3.jpeg | consumerCare | null | null | no | 3467 | 4036 | — |
+| test3.jpeg | countryOfOrigin | null | null | no | 3467 | 4036 | — |
+| Test1_Kurkure.webp | netQuantity | null | 20/- | yes | 3558 | 3284 | 703, 273, 722, 294 |
+| Test1_Kurkure.webp | mrp | 20/- | 20/- | no | 3558 | 3284 | 702, 274, 721, 298 |
+| Test1_Kurkure.webp | mfgDate | null | null | no | 3558 | 3284 | — |
+| Test1_Kurkure.webp | manufacturer | PepsiCo India Holdings Pvt. Ltd. | PEPSICO INDIA HOLDINGS PVT. LTD. | yes | 3558 | 3284 | 598, 541, 620, 761 |
+| Test1_Kurkure.webp | genericName | NAMKEEN | NAMKEEN | no | 3558 | 3284 | 671, 229, 685, 289 |
+| Test1_Kurkure.webp | consumerCare | THE CUSTOMER SERVICES MANAGER, PEPSICO INDIA HOLDINGS PVT. LTD., P.O. BOX-27, DLF QUTAB ENCLAVE, PHASE-1, GURUGRAM - 122002, HARYANA, INDIA. OR CALL US AT 1800 22 4020 OR EMAIL US AT CONSUMER.FEEDBACK@PEPSICO.COM | 1800 22 4020 | yes | 3558 | 3284 | 816, 602, 827, 677 |
+| Test1_Kurkure.webp | countryOfOrigin | null | null | no | 3558 | 3284 | — |
+| blank.png | netQuantity | null | null | no | 2913 | 2358 | — |
+| blank.png | mrp | null | null | no | 2913 | 2358 | — |
+| blank.png | mfgDate | null | null | no | 2913 | 2358 | — |
+| blank.png | manufacturer | null | null | no | 2913 | 2358 | — |
+| blank.png | genericName | null | null | no | 2913 | 2358 | — |
+| blank.png | consumerCare | null | null | no | 2913 | 2358 | — |
+| blank.png | countryOfOrigin | null | null | no | 2913 | 2358 | — |
